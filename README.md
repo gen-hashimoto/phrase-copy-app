@@ -45,7 +45,7 @@ Main elements:
 
 - Phrase list with a **Copy** button per item
 - A **Copy All** button for bulk copying
-- A **Backup** action that outputs all phrases as text
+- Allow users to back up all phrases as plain text
 - An **Import** area where users can paste text to restore phrases
 
 ## Notes
