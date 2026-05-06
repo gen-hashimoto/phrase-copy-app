@@ -81,8 +81,10 @@
 
 - フロントエンド：React
 - 状態管理：useState
-- バックエンド：DB連携あり
+- バックエンド：FastAPI, DB連携あり
+- DB: PostgreSQL
 - Webアプリとして提供
+- Infrastructure: AWS EC2 / Docker Compose
 
 ---
 
@@ -95,6 +97,8 @@
 - 非同期処理対応
 - Forgot Password? 機能
 - ユーザー管理機能の外部移譲（Cognitoなど）
+- Google Ad
+- 多言語対応
 
 ---
 
