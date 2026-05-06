@@ -1,15 +1,10 @@
-# App Title (Working Title)
+# App Title: Phrases (Working Title)
 
-> Working title will be decided together with the designer.
-
-> Repository name is temporary and can be renamed later if needed.
+App name is temporary and can be renamed later if needed.
 
 ## Overview
 
 This app is a lightweight tool for managing and copying predefined phrases.
-The primary goal of Phase 1 is **quick access, easy copying, and simple backup/restore** for personal use.
-
-This document is meant for **early concept alignment and feedback**, not final UI or visual polish.
 
 ## Phase 1 Scope
 
@@ -17,17 +12,7 @@ This document is meant for **early concept alignment and feedback**, not final U
 
 - Display a list of predefined phrases
 - Copy a single phrase to the clipboard
-- Copy all phrases at once (newline-separated)
-- Backup phrases as plain text
-- Restore phrases by pasting plain text (one phrase per line)
-
-### Out of Scope
-
-- User authentication
-- Database persistence
-- Editing or deleting phrases
-- Visual design optimization
-- Responsive fine-tuning
+- Backup phrases when users log in
 
 ## UI Concept (Rough)
 
@@ -39,14 +24,13 @@ This document is meant for **early concept alignment and feedback**, not final U
 
 ![Screen Rough](docs/images/screen_rough_phase1.png)
 
-> This image is a functional mock for discussion purposes only.
-
 Main elements:
 
 - Phrase list with a **Copy** button per item
-- A **Copy All** button for bulk copying
-- Allow users to back up all phrases as plain text
-- An **Import** area where users can paste text to restore phrases
+- 3 dots menu on the left of the each phrase which has CRUD menu in it
+- Category tabs on the top
+- Top 10 Phrases tab as a default Category
+- Search phrase menu
 
 ## Notes
 
