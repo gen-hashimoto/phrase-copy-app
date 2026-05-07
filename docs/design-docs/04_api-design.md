@@ -1,392 +1,182 @@
 # API Design
 
----
-
-## 1. 共通事項
+実装と往復しながら追記する前提のメモです。未確定はセクション末尾の「実装で埋める項目」に集約し、コードとOpenAPIができたらそちらを正とします。
 
 ---
 
-- Base URL: `TODO`
-- 認証方式: `Authorization: Bearer <JWT>`
-- 日時フォーマット: ISO 8601(UTC)
-- エラーフォーマット
-  - `{"error": {"code": "...", "message": "...", "details": {...}}}`
-- 一覧取得の基本
-  - MVPは一覧をまとめて返し、検索・絞り込みは実装しない
-  - 件数増加時のみ `limit` / `offset` を検討 `TODO`
-- 未ログイン時の状態管理はフロントで完結させる想定
+## 1. 共通（いま決めていること）
 
-### ステータスコード方針（ラフ）
 
-- `200`: 取得/更新成功
-- `201`: 作成成功
-- `202`: 非同期受付（メール送信など）
-- `400`: バリデーションエラー
-- `401`: 認証エラー
-- `403`: 権限エラー
-- `404`: 対象なし
-- `409`: 競合（並び順更新など）
-- `429`: レート制限
+| 項目       | 内容                                                                               |
+| -------- | -------------------------------------------------------------------------------- |
+| Base URL | 未確定（例: `/api` や `/api/v1`）。ルーター決定後に書く                                            |
+| 認証       | `Authorization: Bearer <JWT>`                                                    |
+| 日時       | ISO 8601（UTC）。JSONでは文字列（例: `"2026-05-07T22:35:00Z"`）                             |
+| エラー（目安）  | `{"error": {"code": "...", "message": "...", "details": {}}}`。`code` / 本文の細部は実装時 |
+
+
+**一覧**: Phase1 はフレーズをまとめて返す。検索・絞り込み用のクエリは載せない（[01_requirements](./01_requirements.md) のとおり検索はフロント）。
+
+**ゲスト**: 画面設計上、未ログイン時のデータはフロント保持想定（[02_screen-design](./02_screen-design.md)）。その場合、一覧取得などの Phrase API は「ログイン後」から使う形にしやすい。
 
 ---
 
-## 2. API一覧
+## 2. HTTPステータス（目安）
+
+
+| コード | 用途の例                                   |
+| --- | -------------------------------------- |
+| 200 | 取得・更新成功                                |
+| 201 | リソース作成成功                               |
+| 202 | 受付のみ（メール送信など）。Magic Link送信で使うかは実装で最終決定 |
+| 400 | バリデーションエラー                             |
+| 401 | 認証できない・トークン無効                          |
+| 403 | 認証はあるが操作不可                             |
+| 404 | リソースなし                                 |
+| 409 | 競合（並び順の不整合など）                          |
+| 429 | レート制限（入れる場合）                           |
+
 
 ---
 
-### 2-1. auth
+## 3. Phraseオブジェクト（レスポンスの形）
+
+[05_db-design](./05_db-design.md) に合わせたい項目:
+
+- `id` … uuid（文字列として返す想定）
+- `phrase` … 文字列
+- `position` … 整数（表示順）
+- `created_at` / `updated_at` … 日時文字列
+
+※ リクエストに `user_id` を載せるかは設計しない（サーバがJWTから解決）。
 
 ---
 
-#### POST `/auth/magic-link/request`
+## 4. エンドポイント一覧
 
-- 概要: メールアドレスにログインリンクを送信
-- Auth: not required
+パス末尾の `/` は FastAPI のルートに合わせて統一する。
 
-##### Request
+### 4-1. auth
 
-- Body
-  - `email`
-- Example
+#### `POST /auth/magic-link/request`
 
-  ```json
-  {
-    "email": "taro@example.com"
-  }
-  ```
+- **概要**: 指定メールへ Magic Link を送る
+- **Auth**: 不要
+- **Body（JSON）**: `email`（文字列）
+- **成功**: `202 Accepted`（メール送信を非同期扱いにする場合）または `201 Created`／本文なしなど、バックエンドで一つに決める
 
-##### Response
+#### `POST /auth/magic-link/verify`
 
-- Status: `201 Created`
-- Schema: null
-- Example
+- **概要**: メールのトークン等を検証し、アクセストークンを返す
+- **Auth**: 不要
+- **Body**: OAuth2実装で `application/x-www-form-urlencoded` にする場合が多い。フィールド名（`token` など）は実装で確定
+- **成功**: `200`、`access_token`、`token_type`（例: `"bearer"`）。有効期限は実装で決定
 
-  ```json
-  null
-  ```
+#### `GET /auth/me`
 
-##### Error
-
-`TODO`
-
-##### Note
-
-`TODO`
+- **概要**: JWT から現在ユーザーを返す（アプリ再起動後のユーザー表示用。必須ではない）
+- **Auth**: 必須
+- **成功**: `200`、例: `id`, `email`, プラン表現があれば `plan` など
 
 ---
 
-#### POST `/auth/magic-link/verify`
+### 4-2. phrases
 
-- 概要: トークンを検証してアクセストークン発行
-- Auth: not required
+ログイン後の永続データ用。ゲストのみの運用なら呼ばない想定でよい。
 
-##### Request
+#### `GET /phrases/`
 
-- Header
-- `Content-Type`: `application/x-www-formurlencoded`
-- Body
-  - `email`
-- Example
+- **概要**: 自分のフレーズ一覧
+- **Auth**: 必須（方針として）
+- **成功**: `200`、Phraseオブジェクトの配列
 
-  ```text
-  email=taro@example.com
-  ```
+#### `POST /phrases/`
 
-##### Response
+- **概要**: 1件作成
+- **Auth**: 必須
+- **Body**: `phrase`（必須）、`position`（任意ならサーバ規約で末尾付与など）
+- **成功**: `201` + 作成された Phrase オブジェクト（推奨）
 
-- Status: `200 OK`
-- Schema: object
-  - `access_token`: string
-  - `token_type`: string
-- Example
+#### `PATCH /phrases/{phrase_id}`
+
+- **概要**: テキストや `position` の部分更新（片方だけでも可）
+- **Auth**: 必須
+- **成功**: `200` + 更新後の Phrase オブジェクト（または `204` で本文なし。実装で統一）
+
+#### `DELETE /phrases/{phrase_id}`
+
+- **概要**: 削除
+- **Auth**: 必須
+- **Body**: なし
+- **成功**: `204 No Content` または `200` + メッセージ。実装で統一
+
+#### `PATCH /phrases/reorder`
+
+- **概要**: 並び順の一括更新
+- **Auth**: 必須
+- **Body（例）**: `{ "orders": [{ "id": "<uuid>", "position": 1 }, ...] }`
+- **成功**: `200`（本文の要否は実装で）。競合時に `409` を使うかは実装で
+
+#### `POST /phrases/import`
+
+- **概要**: 改行区切りテキストから一括登録（Append / Overwrite）
+- **Auth**: 必須
+- **Body（例）**: `mode`: `append` | `overwrite`、`text`: 複数行文字列
+- **成功**: `200` など + 例: `imported`, `skipped` の件数（キー名は実装で確定）
+
+---
+
+## 5. JSON例（動く形の参考）
+
+一覧の1件・作成レスポンスのイメージ（`id` は uuid 文字列、日時は ISO 8601）。
 
 ```json
 {
-  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-  "token_type": "bearer"
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "phrase": "今日は散歩に行きました。",
+  "position": 2,
+  "created_at": "2026-05-07T22:35:00Z",
+  "updated_at": "2026-05-07T22:35:00Z"
 }
 ```
 
-##### Error
-
-- Auth error
-  - Status: `401 Unauthorized`
-  - Body
+作成リクエストの例:
 
 ```json
 {
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Could not validate user.",
-    "details": null
-  }
+  "phrase": "This is an important command!",
+  "position": 3
 }
 ```
 
-##### Note
+部分更新は、例えば本文だけ:
 
-- FastAPI の `OAuth2PasswordRequestForm` を使っているため JSON ではなく form 形式で送る
-- アクセストークンの有効期限は1週間
+```json
+{
+  "phrase": "今日は散歩に行きましたよ。"
+}
+```
 
----
+または順序だけ:
 
-#### POST `/auth/me`
-
-- 概要: Bearerトークンからログイン中ユーザーを返す
-- Auth: required
-
-##### Request
-
-- Body
-  - ``
-- Example
-
-  ```json
-  {
-    "": ""
-  }
-  ```
-
-##### Response
-
-- Status: ``
-- Schema:
-- Example
-
-  ```json
-
-  ```
-
-##### Error
-
-`TODO`
-
-##### Note
-
-`TODO`
+```json
+{
+  "position": 1
+}
+```
 
 ---
 
-### 2-2. phrases
+## 6. 実装で埋める項目（チェックリスト）
+
+実装・OpenAPIを書くときに、ここを潰して本文に反映していく。
+
+- Base URL・APIバージョン（`/v1` の有無）
+- Magic Link `request` の最終ステータス（201 / 202）とレスポンス本文
+- `verify` の Content-Type・フィールド名・エラー時の `error.code`
+- JWT の有効期限・リフレッシュの要否
+- `GET /auth/me` を入れるか、`verify` のレスポンスだけで足りるか
+- Phrase 系をゲストAPIに広げるか（現状はログイン後想定）
+- `reorder` / `import` のトランザクション・上限・バリデーション（空行・最大件数）
+- レート制限の有無（特に Magic Link 再送）
 
----
-
-#### GET `/phrases/`
-
-- 概要: フレーズ一覧取得
-- Auth: required (Bearer JWT)
-
-##### Request
-
-- Body
-  - ``
-- Example
-
-  ```json
-  {
-    "": ""
-  }
-  ```
-
-##### Response
-
-- Status: ``
-- Schema:
-- Example
-
-  ```json
-
-  ```
-
-##### Error
-
-`TODO`
-
-##### Note
-
-`TODO`
-
----
-
-#### POST `/phrases/`
-
-- 概要: フレーズ作成
-- Auth: required (Bearer JWT)
-
-##### Request
-
-- Body
-  - ``
-- Example
-
-  ```json
-  {
-    "": ""
-  }
-  ```
-
-##### Response
-
-- Status: ``
-- Schema:
-- Example
-
-  ```json
-
-  ```
-
-##### Error
-
-`TODO`
-
-##### Note
-
-`TODO`
-
----
-
-#### PATCH `/phrases/{phrase_id}`
-
-- 概要: フレーズ更新
-- Auth: required (Bearer JWT)
-
-##### Request
-
-- Body
-  - ``
-- Example
-
-  ```json
-  {
-    "": ""
-  }
-  ```
-
-##### Response
-
-- Status: ``
-- Schema:
-- Example
-
-  ```json
-
-  ```
-
-##### Error
-
-`TODO`
-
-##### Note
-
-`TODO`
-
----
-
-#### DELETE `/phrases/{phrase_id}`
-
-- 概要: フレーズ削除
-- Auth: required (Bearer JWT)
-
-##### Request
-
-- Body
-  - ``
-- Example
-
-  ```json
-  {
-    "": ""
-  }
-  ```
-
-##### Response
-
-- Status: ``
-- Schema:
-- Example
-
-  ```json
-
-  ```
-
-##### Error
-
-`TODO`
-
-##### Note
-
-`TODO`
-
----
-
-#### PATCH `/phrases/reorder`
-
-- 概要: 並び順をまとめて更新
-- Auth: required (Bearer JWT)
-
-##### Request
-
-- Body
-  - ``
-- Example
-
-  ```json
-  {
-    "": ""
-  }
-  ```
-
-##### Response
-
-- Status: ``
-- Schema:
-- Example
-
-  ```json
-
-  ```
-
-##### Error
-
-`TODO`
-
-##### Note
-
-`TODO`
-
----
-
-#### PATCH `/phrases/import`
-
-- 概要: テキストから一括登録
-- Auth: required (Bearer JWT)
-
-##### Request
-
-- Body
-  - ``
-- Example
-
-  ```json
-  {
-    "": ""
-  }
-  ```
-
-##### Response
-
-- Status: ``
-- Schema:
-- Example
-
-  ```json
-
-  ```
-
-##### Error
-
-`TODO`
-
-##### Note
-
-`TODO`
