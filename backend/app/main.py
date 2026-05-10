@@ -1,10 +1,13 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy import select, text
-from app.db.session import SessionLocal, engine
+from sqlalchemy.orm import Session
+
+from app.api.deps import get_db
 from app.db.base import Base
+from app.db.session import engine
 from app.models import phrase  # noqa: F401 # Base.metadata に登録するため
-from app.schemas.phrase import PhraseCreate, PhraseUpdate
-from fastapi import FastAPI, HTTPException
+from app.schemas.phrase import PhraseCreate, PhraseRead, PhraseUpdate
+from app.repositories.phrase_repository import PhraseRepository
 
 app = FastAPI()
 Base.metadata.create_all(bind=engine)
@@ -16,82 +19,51 @@ def health():
 
 
 @app.get("/db-health")
-def db_health():
-    db = SessionLocal()
-    try:
-        db.execute(text("SELECT 1"))
-        return {"db": "ok"}
-    finally:
-        db.close()
+def db_health(db: Session = Depends(get_db)):
+    db.execute(text("SELECT 1"))
+    return {"db": "ok"}
 
 
-@app.get("/phrases")
-def list_phrases():
-    db = SessionLocal()
-    try:
-        stmt = select(phrase.Phrase).order_by(phrase.Phrase.id.asc())
-        return list(db.scalars(stmt).all())
-    finally:
-        db.close()
+@app.get("/phrases", response_model=list[PhraseRead])
+def list_phrases(db: Session = Depends(get_db)):
+    repo = PhraseRepository(db)
+    return repo.list_all()
 
 
-@app.post("/phrases")
-def create_phrase(body: PhraseCreate):
-    db = SessionLocal()
-    try:
-        row = phrase.Phrase(title=body.title, content=body.content)
-        db.add(row)
-        db.commit()
-        db.refresh(row)
-        return row
-    finally:
-        db.close()
+@app.post("/phrases", response_model=PhraseRead)
+def create_phrase(body: PhraseCreate, db: Session = Depends(get_db)):
+    repo = PhraseRepository(db)
+    return repo.create(body.title, body.content)
 
 
-@app.get("/phrases/{phrase_id}")
-def get_phrase(phrase_id: int):  # todo: id はuuidの予定
-    db = SessionLocal()
-    try:
-        row = db.get(phrase.Phrase, phrase_id)
-        if row is None:
-            raise HTTPException(status_code=404, detail="Phrase not found")
-        return row
-    finally:
-        db.close()
+@app.get("/phrases/{phrase_id}", response_model=PhraseRead)
+def get_phrase(phrase_id: int, db: Session = Depends(get_db)):  # todo: id はuuidの予定
+    repo = PhraseRepository(db)
+    row = repo.get_by_id(phrase_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Phrase not found")
+    return row
 
 
 @app.delete("/phrases/{phrase_id}")
-def delete_phrase(phrase_id: int):
-    db = SessionLocal()
-    try:
-        row = db.get(phrase.Phrase, phrase_id)
-        if row is None:
-            raise HTTPException(status_code=404, detail="Phrase not found")
+def delete_phrase(phrase_id: int, db: Session = Depends(get_db)):
+    repo = PhraseRepository(db)
+    row = repo.get_by_id(phrase_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Phrase not found")
 
-        db.delete(row)
-        db.commit()
-        return {"deleted": True}
-    finally:
-        db.close()
+    repo.delete(row)
+    return {"deleted": True}
 
 
-@app.put("/phrases/{phrase_id}")
-def update_phrase(phrase_id: int, body: PhraseUpdate):
-    db = SessionLocal()
-    try:
-        row = db.get(phrase.Phrase, phrase_id)
-        if row is None:
-            raise HTTPException(status_code=404, detail="Phrase not found")
-        if body.title is None and body.content is None:
-            raise HTTPException(status_code=400, detail="title or content is required")
+@app.put("/phrases/{phrase_id}", response_model=PhraseRead)
+def update_phrase(phrase_id: int, body: PhraseUpdate, db: Session = Depends(get_db)):
+    repo = PhraseRepository(db)
+    row = repo.get_by_id(phrase_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Phrase not found")
+    if body.title is None and body.content is None:
+        raise HTTPException(status_code=400, detail="title or content is required")
 
-        if body.title is not None:
-            row.title = body.title
-        if body.content is not None:
-            row.content = body.content
-
-        db.commit()
-        db.refresh(row)
-        return row
-    finally:
-        db.close()
+    row = repo.update(row, body.title, body.content)
+    return row
