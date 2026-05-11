@@ -1,5 +1,6 @@
-# frontend（プレースホルダ）
+# sandbox 付属のフロント見本
 
-本サンプルでは API 見本に絞っているため、フロントエンド実装は含めていません。
+- **`get-phrases-steps/`** … `GET /phrases` 一覧（型 → env → fetch → Table）の段階別サンプル。
+- **`cors-mutations-steps/`** … ブラウザ直 fetch で CORS を体験 → FastAPI で解消 → POST/PUT/DELETE → Route Handler で「ブラウザ用 CORS不要」パターン。
 
-本開発ではここに React / Vue / Svelte などの SPA を置く想定でディレクトリだけ用意しています。CORS はバックエンド側で `http://localhost:3000` 等を `.env` の `CORS_ORIGINS` に追加してください。
+リポジトリ本番のフロントはリポジトリルートの `frontend/` を参照すること。
