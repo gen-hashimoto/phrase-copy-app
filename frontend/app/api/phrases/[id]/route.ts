@@ -29,9 +29,6 @@ export async function DELETE(
   _request: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const params = await context.params
-  console.log("[DELETE /api/phrases/[id]] params:", params)
-
   const { id } = await context.params
   const o = apiOrigin()
   if (!o) {
