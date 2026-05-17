@@ -16,6 +16,10 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { cn } from "@/lib/utils"
+import { copyTextToClipboard } from "@/lib/copy-to-clipboard"
+import { getPhraseCopyText } from "@/lib/phrase-copy-text"
+import { useCopiedFeedback } from "@/hooks/use-copied-feedback"
+import { joinPhrasesForCopyAll } from "@/lib/join-phrases-for-copy-all"
 
 const fieldClass =
   "border-input bg-background w-full min-w-0 rounded-md border px-2 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
@@ -35,6 +39,8 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editContent, setEditContent] = useState("")
+
+  const { showCopied, isCopied } = useCopiedFeedback()
 
   function refreshList() {
     startTransition(() => {
@@ -108,6 +114,39 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
     refreshList()
   }
 
+  async function handleCopy(phrase: PhraseRead) {
+    try {
+      await copyTextToClipboard(getPhraseCopyText(phrase))
+      showCopied(phrase.id)
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      window.alert(`コピーに失敗しました: ${message}`)
+    }
+  }
+
+  // type Props = {
+  //   phrases: PhraseRead[]
+  //   disabled?: boolean
+  //   onSuccess?: () => void
+  //   onError?: (message: string) => void
+  // }
+
+  async function handleCopyAll() {
+    if (phrases.length === 0) {
+      window.alert("コピーするフレーズがありません")
+      return
+    }
+    const text = joinPhrasesForCopyAll(phrases)
+
+    try {
+      await copyTextToClipboard(text)
+      window.alert("コピーに成功しました")
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      window.alert(`コピーに失敗しました: ${message}`)
+    }
+  }
+
   return (
     <div className={cn("flex flex-col gap-6", isPending && "opacity-70")}>
       {banner ? (
@@ -168,7 +207,12 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
           </TableHeader>
           <TableBody>
             {phrases.map((p) => (
-              <TableRow key={p.id}>
+              <TableRow
+                key={p.id}
+                className={cn(
+                  isCopied(p.id) && "bg-primary/10 transition-colors"
+                )}
+              >
                 <TableCell className="font-mono text-xs">{p.id}</TableCell>
                 {editingId === p.id ? (
                   <>
@@ -216,7 +260,12 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
                 ) : (
                   <>
                     <TableCell className="font-medium">{p.title}</TableCell>
-                    <TableCell className="max-w-md text-xs whitespace-normal text-muted-foreground">
+                    <TableCell
+                      className={cn(
+                        "max-w-md text-xs whitespace-normal text-muted-foreground",
+                        isCopied(p.id) && "text-foreground"
+                      )}
+                    >
                       {p.content}
                     </TableCell>
                     <TableCell className="text-xs whitespace-normal text-muted-foreground">
@@ -224,6 +273,24 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex flex-wrap justify-end gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="secondary"
+                          disabled={isPending}
+                          onClick={() => void handleCopy(p)}
+                        >
+                          コピー
+                        </Button>
+                        {isCopied(p.id) ? (
+                          <span
+                            className="text-xs text-muted-foreground"
+                            aria-live="polite"
+                          >
+                            Copied!
+                          </span>
+                        ) : null}
+
                         <Button
                           type="button"
                           size="sm"
@@ -251,6 +318,15 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
           </TableBody>
         </Table>
       )}
+
+      <Button
+        type="button"
+        variant="outline"
+        disabled={isPending || phrases.length === 0}
+        onClick={() => void handleCopyAll()}
+      >
+        Copy All
+      </Button>
     </div>
   )
 }
