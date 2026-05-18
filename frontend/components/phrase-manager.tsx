@@ -1,25 +1,19 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useState, useTransition, type SubmitEvent } from "react"
+import { useCallback, useState, useTransition, type SubmitEvent } from "react"
 
 import type { PhraseRead } from "@/types/phrase"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { TableCell, TableRow } from "@/components/ui/table"
+import { PhraseTableShell } from "@/components/phrase-table-shell"
 import { cn } from "@/lib/utils"
 import { copyTextToClipboard } from "@/lib/copy-to-clipboard"
 import { getPhraseCopyText } from "@/lib/phrase-copy-text"
 import { useCopiedFeedback } from "@/hooks/use-copied-feedback"
 import { joinPhrasesForCopyAll } from "@/lib/join-phrases-for-copy-all"
+import { PhraseDisplayRow } from "./phrase-display-row"
 
 const fieldClass =
   "border-input bg-background w-full min-w-0 rounded-md border px-2 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
@@ -67,12 +61,12 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
     refreshList()
   }
 
-  function startEdit(p: PhraseRead) {
+  const startEdit = useCallback((p: PhraseRead) => {
     setEditingId(p.id)
     setEditTitle(p.title)
     setEditContent(p.content)
     setBanner(null)
-  }
+  }, [])
 
   function cancelEdit() {
     setEditingId(null)
@@ -196,122 +190,72 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
           >
             {isCopied("all") ? "Copied!" : "Copy All"}
           </Button>
-          <Table>
-            <TableCaption>
-              一覧（POST / PUT / DELETE は /api 経由）
-            </TableCaption>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-14">ID</TableHead>
-                <TableHead className="min-w-32">タイトル</TableHead>
-                <TableHead>内容</TableHead>
-                <TableHead className="w-44">作成日時</TableHead>
-                <TableHead className="w-52 text-right">操作</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {phrases.map((p) => (
-                <TableRow
-                  key={p.id}
-                  className={cn(
-                    isCopied(p.id) && "bg-primary/10 transition-colors"
-                  )}
-                >
-                  <TableCell className="font-mono text-xs">{p.id}</TableCell>
-                  {editingId === p.id ? (
-                    <>
-                      <TableCell colSpan={2} className="align-top">
-                        <div className="flex flex-col gap-2">
-                          <input
-                            className={fieldClass}
-                            value={editTitle}
-                            onChange={(e) => setEditTitle(e.target.value)}
-                            aria-label="編集: タイトル"
-                          />
-                          <textarea
-                            className={cn(fieldClass, "min-h-20 resize-y")}
-                            value={editContent}
-                            onChange={(e) => setEditContent(e.target.value)}
-                            aria-label="編集: 内容"
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-xs whitespace-normal text-muted-foreground">
-                        {new Date(p.created_at).toLocaleString("ja-JP")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            disabled={isPending}
-                            onClick={() => void handleSaveEdit()}
-                          >
-                            保存（PUT）
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={isPending}
-                            onClick={cancelEdit}
-                          >
-                            キャンセル
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </>
-                  ) : (
-                    <>
-                      <TableCell className="font-medium">{p.title}</TableCell>
-                      <TableCell
-                        className={cn(
-                          "max-w-md text-xs whitespace-normal text-muted-foreground",
-                          isCopied(p.id) && "text-foreground"
-                        )}
+          <PhraseTableShell>
+            {phrases.map((p) =>
+              editingId === p.id ? (
+                <TableRow key={p.id}>
+                  <TableCell className="align-top">
+                    <div className="flex flex-col gap-2">
+                      <input
+                        className={fieldClass}
+                        value={editContent}
+                        onChange={(e) => setEditContent(e.target.value)}
+                        aria-label="編集: 内容"
+                      />
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={isPending}
+                        onClick={() => void handleSaveEdit()}
                       >
-                        {p.content}
-                      </TableCell>
-                      <TableCell className="text-xs whitespace-normal text-muted-foreground">
-                        {new Date(p.created_at).toLocaleString("ja-JP")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex flex-wrap justify-end gap-2">
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="secondary"
-                            disabled={isCopied(p.id)}
-                            onClick={() => void handleCopy(p)}
-                          >
-                            {isCopied(p.id) ? "Copied!" : "Copy"}
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={isPending}
-                            onClick={() => startEdit(p)}
-                          >
-                            編集
-                          </Button>
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="destructive"
-                            disabled={isPending}
-                            onClick={() => void handleDelete(p.id)}
-                          >
-                            削除
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </>
-                  )}
+                        保存（PUT）
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={isPending}
+                        onClick={cancelEdit}
+                      >
+                        キャンセル
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              ) : (
+                <PhraseDisplayRow
+                  key={p.id}
+                  phrase={p}
+                  isCopied={isCopied(p.id)}
+                  isEditing={false}
+                  onStartEdit={startEdit}
+                >
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={isCopied(p.id)}
+                    onClick={() => void handleCopy(p)}
+                  >
+                    {isCopied(p.id) ? "Copied!" : "Copy"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="destructive"
+                    disabled={isPending}
+                    onClick={() => void handleDelete(p.id)}
+                  >
+                    削除
+                  </Button>
+                </PhraseDisplayRow>
+              )
+            )}
+          </PhraseTableShell>
         </>
       )}
     </div>
