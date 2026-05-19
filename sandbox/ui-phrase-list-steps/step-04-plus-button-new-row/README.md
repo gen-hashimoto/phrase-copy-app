@@ -7,12 +7,12 @@
 1. `phrase-manager.tsx` から **Card「新規作成」**ブロック全体を削除する。
 2. 一覧の下（テーブル直後）に **+** ボタンを置く。サンプル: `components/add-phrase-row-snippet.tsx`。
 3. 押下時:
-   - `lib/draft-phrase.ts` の **仮 ID**（例: `-1`）でクライアント専用の draft 行を state に追加。
-   - `editingId` をその仮 IDにし、`editContent` を `""` に。
+  - `lib/draft-phrase.ts` の **仮 ID**（例: `-1`）でクライアント専用の draft 行を state に追加。
+  - `editingId` をその仮 IDにし、`editContent` を `""` に。
 4. テーブル描画: `displayPhrases = [...phrases, draftRow?]` のように **最後に draft 行**を足して表示。
 5. OK 時:
-   - 仮 ID なら **POST** `/api/phrases`（step-05 前は `{ title: "—", content }` など暫定 title でも可。step-05 後は `{ content }` のみ）。
-   - 成功したら draft を消し `router.refresh()`。
+  - 仮 ID なら **POST** `/api/phrases`（step-05 前は `{ title: "—", content }` など暫定 title でも可。step-05 後は `{ content }` のみ）。
+  - 成功したら draft を消し `router.refresh()`。
 6. Cancel 時: draft 行だけ state から削除。
 
 ### コピー先
@@ -24,12 +24,14 @@ frontend/components/phrase-manager.tsx
 
 ### 仮 ID の扱い（重要）
 
-| 概念 | 推奨 |
-|------|------|
-| 定数 | `DRAFT_PHRASE_ID = -1`（負の数は DB に存在しない） |
-| 型 | `editingId: number \| null` のまま。`editingId < 0` で新規 draft と判定 |
-| 削除 | draft 行に削除ボタンは **出さない**か、Cancel と同じ扱い |
-| 複数 draft | Phase1 では **同時に 1 件だけ**（+ を押したら既存 draft があれば先に Cancel 促す） |
+
+| 概念       | 推奨                                                           |
+| -------- | ------------------------------------------------------------ |
+| 定数       | `DRAFT_PHRASE_ID = -1`（負の数は DB に存在しない）                       |
+| 型        | `editingId: number | null` のまま。`editingId < 0` で新規 draft と判定 |
+| 削除       | draft 行に削除ボタンは **出さない**か、Cancel と同じ扱い                        |
+| 複数 draft | Phase1 では **同時に 1 件だけ**（+ を押したら既存 draft があれば先に Cancel 促す）    |
+
 
 将来の「10 件上限」は `phrases.length + (hasDraft ? 1 : 0) >= 10` で + を `disabled` にすればよい（本ステップでは任意）。
 

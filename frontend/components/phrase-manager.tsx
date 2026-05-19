@@ -1,19 +1,21 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useCallback, useState, useTransition, type SubmitEvent } from "react"
+import { useCallback, useState, useTransition } from "react"
 
 import type { PhraseRead } from "@/types/phrase"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TableCell, TableRow } from "@/components/ui/table"
 import { PhraseTableShell } from "@/components/phrase-table-shell"
+import { PhraseDisplayRow } from "@/components/phrase-display-row"
+import { AddPhraseControl } from "@/components/add-phrase-control"
+import { EditModeActions } from "@/components/edit-mode-actions"
 import { cn } from "@/lib/utils"
 import { copyTextToClipboard } from "@/lib/copy-to-clipboard"
 import { getPhraseCopyText } from "@/lib/phrase-copy-text"
 import { useCopiedFeedback } from "@/hooks/use-copied-feedback"
 import { joinPhrasesForCopyAll } from "@/lib/join-phrases-for-copy-all"
-import { PhraseDisplayRow } from "./phrase-display-row"
+import { createDraftPhraseRow, DRAFT_PHRASE_ID } from "@/lib/draft-phrase"
 
 const fieldClass =
   "border-input bg-background w-full min-w-0 rounded-md border px-2 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
@@ -26,13 +28,12 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [banner, setBanner] = useState<string | null>(null)
-
-  const [createTitle, setCreateTitle] = useState("")
-  const [createContent, setCreateContent] = useState("")
-
+  const [draftRow, setDraftRow] = useState<PhraseRead | null>(null)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editTitle, setEditTitle] = useState("")
   const [editContent, setEditContent] = useState("")
+
+  const displayPhrases = draftRow != null ? [...phrases, draftRow] : phrases
 
   const { showCopied, isCopied } = useCopiedFeedback()
 
@@ -42,21 +43,19 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
     })
   }
 
-  async function handleCreate(e: SubmitEvent) {
-    e.preventDefault()
+  async function handleCreate() {
     setBanner(null)
     const res = await fetch("/api/phrases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: createTitle, content: createContent }),
+      body: JSON.stringify({ title: "---", content: editContent }),
     })
     if (!res.ok) {
       const text = await res.text()
       setBanner(`作成に失敗しました (${res.status}): ${text}`)
       return
     }
-    setCreateTitle("")
-    setCreateContent("")
+    clearDraft()
     setBanner("作成しました。")
     refreshList()
   }
@@ -68,14 +67,34 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
     setBanner(null)
   }, [])
 
+  function startDraft() {
+    setDraftRow(createDraftPhraseRow())
+    setEditingId(DRAFT_PHRASE_ID)
+    setEditContent("")
+  }
+
   function cancelEdit() {
+    if (editingId != null && editingId === DRAFT_PHRASE_ID) {
+      clearDraft()
+    } else {
+      setEditingId(null)
+      setEditTitle("")
+      setEditContent("")
+    }
+  }
+
+  function clearDraft() {
+    setDraftRow(null)
     setEditingId(null)
-    setEditTitle("")
     setEditContent("")
   }
 
   async function handleSaveEdit() {
-    if (editingId == null) return
+    if (editingId === null) return
+    if (editingId === DRAFT_PHRASE_ID) {
+      handleCreate()
+      return
+    }
     setBanner(null)
     const res = await fetch(`/api/phrases/${editingId}`, {
       method: "PUT",
@@ -142,42 +161,6 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
         </p>
       ) : null}
 
-      <Card size="sm">
-        <CardHeader>
-          <CardTitle>新規作成</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form className="flex flex-col gap-3" onSubmit={handleCreate}>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">タイトル</span>
-              <input
-                className={fieldClass}
-                name="title"
-                required
-                minLength={1}
-                maxLength={255}
-                value={createTitle}
-                onChange={(e) => setCreateTitle(e.target.value)}
-              />
-            </label>
-            <label className="flex flex-col gap-1">
-              <span className="text-xs text-muted-foreground">内容</span>
-              <textarea
-                className={cn(fieldClass, "min-h-24 resize-y")}
-                name="content"
-                required
-                minLength={1}
-                value={createContent}
-                onChange={(e) => setCreateContent(e.target.value)}
-              />
-            </label>
-            <Button type="submit" disabled={isPending}>
-              作成（POST）
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-
       {phrases.length === 0 ? (
         <p className="text-sm text-muted-foreground">フレーズがありません。</p>
       ) : (
@@ -191,7 +174,7 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
             {isCopied("all") ? "Copied!" : "Copy All"}
           </Button>
           <PhraseTableShell>
-            {phrases.map((p) =>
+            {displayPhrases.map((p) =>
               editingId === p.id ? (
                 <TableRow key={p.id}>
                   <TableCell className="align-top">
@@ -205,25 +188,11 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={isPending}
-                        onClick={() => void handleSaveEdit()}
-                      >
-                        保存（PUT）
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={isPending}
-                        onClick={cancelEdit}
-                      >
-                        キャンセル
-                      </Button>
-                    </div>
+                    <EditModeActions
+                      disabled={false}
+                      onOk={() => void handleSaveEdit()}
+                      onCancel={cancelEdit}
+                    />
                   </TableCell>
                 </TableRow>
               ) : (
@@ -258,6 +227,11 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
           </PhraseTableShell>
         </>
       )}
+      <AddPhraseControl
+        phrases={phrases}
+        disabled={editingId === draftRow?.id}
+        onStartDraft={startDraft}
+      />
     </div>
   )
 }
