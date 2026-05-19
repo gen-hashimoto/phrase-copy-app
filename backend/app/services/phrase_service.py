@@ -13,7 +13,7 @@ class PhraseService:
         return self.repo.list_all()
 
     def create_phrase(self, body: PhraseCreate) -> Phrase:
-        return self.repo.create(body.title, body.content)
+        return self.repo.create(body.content)
 
     def get_phrase(self, phrase_id: int) -> Phrase:  # todo: id はuuidの予定
         row = self.repo.get_by_id(phrase_id)
@@ -31,6 +31,4 @@ class PhraseService:
         row = self.repo.get_by_id(phrase_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Phrase not found")
-        if body.title is None and body.content is None:
-            raise HTTPException(status_code=400, detail="title or content is required")
-        return self.repo.update(row, body.title, body.content)
+        return self.repo.update(row, body.content)

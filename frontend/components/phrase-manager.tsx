@@ -30,8 +30,7 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
   const [banner, setBanner] = useState<string | null>(null)
   const [draftRow, setDraftRow] = useState<PhraseRead | null>(null)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [editTitle, setEditTitle] = useState("")
-  const [editContent, setEditContent] = useState("")
+  const [content, setEditContent] = useState("")
 
   const displayPhrases = draftRow != null ? [...phrases, draftRow] : phrases
 
@@ -48,7 +47,7 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
     const res = await fetch("/api/phrases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: "---", content: editContent }),
+      body: JSON.stringify({ content }),
     })
     if (!res.ok) {
       const text = await res.text()
@@ -62,7 +61,6 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
 
   const startEdit = useCallback((p: PhraseRead) => {
     setEditingId(p.id)
-    setEditTitle(p.title)
     setEditContent(p.content)
     setBanner(null)
   }, [])
@@ -78,7 +76,6 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
       clearDraft()
     } else {
       setEditingId(null)
-      setEditTitle("")
       setEditContent("")
     }
   }
@@ -99,7 +96,7 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
     const res = await fetch(`/api/phrases/${editingId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: editTitle, content: editContent }),
+      body: JSON.stringify({ content }),
     })
     if (!res.ok) {
       const text = await res.text()
@@ -181,7 +178,7 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
                     <div className="flex flex-col gap-2">
                       <input
                         className={fieldClass}
-                        value={editContent}
+                        value={content}
                         onChange={(e) => setEditContent(e.target.value)}
                         aria-label="編集: 内容"
                       />

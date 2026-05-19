@@ -12,7 +12,6 @@ export function isDraftPhraseId(id: number): boolean {
 export function createDraftPhraseRow(): PhraseRead {
   return {
     id: DRAFT_PHRASE_ID,
-    title: "", // remove field after step-05-remove-title-backend
     content: "",
     created_at: new Date().toISOString(),
   }

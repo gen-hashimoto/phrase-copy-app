@@ -15,19 +15,15 @@ class PhraseRepository:
         row = self.db.get(Phrase, phrase_id)
         return row
 
-    def create(self, title: str, content: str) -> Phrase:
-        row = Phrase(title=title, content=content)
+    def create(self, content: str) -> Phrase:
+        row = Phrase(content=content)
         self.db.add(row)
         self.db.commit()
         self.db.refresh(row)
         return row
 
-    def update(self, row: Phrase, title: str | None, content: str | None) -> Phrase:
-        if title is not None:
-            row.title = title
-        if content is not None:
-            row.content = content
-
+    def update(self, row: Phrase, content: str) -> Phrase:
+        row.content = content
         self.db.commit()
         self.db.refresh(row)
         return row
