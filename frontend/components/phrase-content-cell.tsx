@@ -27,9 +27,10 @@ export function PhraseContentCell({
   return (
     <div
       className={cn(
-        "max-w-md cursor-text text-sm whitespace-normal",
+        "block min-w-0 cursor-text overflow-hidden truncate text-sm",
         isCopied ? "text-foreground" : "text-muted-foreground"
       )}
+      style={{ maxWidth: "min(48rem, calc(100vw - 18rem))" }}
       onDoubleClick={() => onStartEdit(phrase)}
       onTouchEnd={handleDoubleTap}
       role="button"

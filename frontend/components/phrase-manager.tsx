@@ -16,13 +16,14 @@ import { getPhraseCopyText } from "@/lib/phrase-copy-text"
 import { useCopiedFeedback } from "@/hooks/use-copied-feedback"
 import { joinPhrasesForCopyAll } from "@/lib/join-phrases-for-copy-all"
 import { createDraftPhraseRow, DRAFT_PHRASE_ID } from "@/lib/draft-phrase"
-
-const fieldClass =
-  "border-input bg-background w-full min-w-0 rounded-md border px-2 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
+import { validatePhraseContent } from "@/lib/validate-phrase-content"
 
 type PhraseManagerProps = {
   phrases: PhraseRead[]
 }
+
+const fieldClass =
+  "border-input bg-background w-full min-w-0 rounded-md border px-2 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
 
 export function PhraseManager({ phrases }: PhraseManagerProps) {
   const router = useRouter()
@@ -42,12 +43,12 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
     })
   }
 
-  async function handleCreate() {
+  async function handleCreate(nextContent: string) {
     setBanner(null)
     const res = await fetch("/api/phrases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({ content: nextContent }),
     })
     if (!res.ok) {
       const text = await res.text()
@@ -86,10 +87,16 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
     setEditContent("")
   }
 
-  async function handleSaveEdit() {
+  async function handleSaveEdit(nextContent: string) {
+    const error = validatePhraseContent(nextContent)
+    if (error) {
+      setBanner(error)
+      window.alert(error)
+      return
+    }
     if (editingId === null) return
     if (editingId === DRAFT_PHRASE_ID) {
-      handleCreate()
+      handleCreate(nextContent)
       return
     }
     setBanner(null)
@@ -176,18 +183,37 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
                 <TableRow key={p.id}>
                   <TableCell className="align-top">
                     <div className="flex flex-col gap-2">
-                      <input
-                        className={fieldClass}
+                      <textarea
+                        className={cn(
+                          fieldClass,
+                          "min-h-20 resize-y",
+                          banner != null && "border-destructive"
+                        )}
                         value={content}
-                        onChange={(e) => setEditContent(e.target.value)}
-                        aria-label="編集: 内容"
+                        onChange={(e) => {
+                          setEditContent(e.target.value)
+                          setBanner(null)
+                        }}
+                        aria-label="フレーズを編集"
+                        aria-invalid={banner != null}
+                        onKeyDown={(e) => {
+                          if (e.key === "Escape") {
+                            e.preventDefault()
+                            cancelEdit()
+                            return
+                          }
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault()
+                            handleSaveEdit(content)
+                          }
+                        }}
                       />
                     </div>
                   </TableCell>
                   <TableCell className="text-right">
                     <EditModeActions
                       disabled={false}
-                      onOk={() => void handleSaveEdit()}
+                      onOk={() => void handleSaveEdit(content)}
                       onCancel={cancelEdit}
                     />
                   </TableCell>
@@ -224,11 +250,16 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
           </PhraseTableShell>
         </>
       )}
-      <AddPhraseControl
-        phrases={phrases}
-        disabled={editingId === draftRow?.id}
-        onStartDraft={startDraft}
-      />
+      <div className="flex items-center gap-4">
+        <AddPhraseControl
+          phrases={phrases}
+          disabled={editingId === draftRow?.id}
+          onStartDraft={startDraft}
+        />
+        <p className="text-sm text-muted-foreground">
+          {phrases.length} / 10 used
+        </p>
+      </div>
     </div>
   )
 }

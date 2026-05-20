@@ -13,7 +13,11 @@ import {
 
 export function PhraseTableShell({ children }: { children: ReactNode }) {
   return (
-    <Table>
+    <Table className="w-full table-fixed">
+      <colgroup>
+        <col style={{ width: "calc(100% - 13rem)" }} />
+        <col style={{ width: "13rem" }} />
+      </colgroup>
       <TableCaption>フレーズ一覧</TableCaption>
       <TableHeader>
         <TableRow>

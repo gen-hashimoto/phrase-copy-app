@@ -26,7 +26,7 @@ export function PhraseDisplayRow({
     <TableRow className={cn(isCopied && "bg-primary/10 transition-colors")}>
       <TableCell
         className={cn(
-          "max-w-md text-sm whitespace-normal",
+          "min-w-0 max-w-0 overflow-hidden text-sm",
           isCopied ? "text-foreground" : "text-muted-foreground"
         )}
       >
@@ -37,7 +37,7 @@ export function PhraseDisplayRow({
           onStartEdit={onStartEdit}
         />
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="w-52 text-right">
         <div className="flex flex-wrap justify-end gap-2">{children}</div>
       </TableCell>
     </TableRow>
