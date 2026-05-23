@@ -20,19 +20,19 @@ def create_phrase(body: PhraseCreate, db: Session = Depends(get_db)):
 
 
 @router.get("/{phrase_id}", response_model=PhraseRead)
-def get_phrase(phrase_id: int, db: Session = Depends(get_db)):  # todo: id はuuidの予定
+def get_phrase(phrase_id: str, db: Session = Depends(get_db)):
     service = PhraseService(db)
     return service.get_phrase(phrase_id)
 
 
 @router.delete("/{phrase_id}")
-def delete_phrase(phrase_id: int, db: Session = Depends(get_db)):
+def delete_phrase(phrase_id: str, db: Session = Depends(get_db)):
     service = PhraseService(db)
     service.delete_phrase(phrase_id)
     return {"deleted": True}
 
 
 @router.put("/{phrase_id}", response_model=PhraseRead)
-def update_phrase(phrase_id: int, body: PhraseUpdate, db: Session = Depends(get_db)):
+def update_phrase(phrase_id: str, body: PhraseUpdate, db: Session = Depends(get_db)):
     service = PhraseService(db)
     return service.update_phrase(phrase_id, body)

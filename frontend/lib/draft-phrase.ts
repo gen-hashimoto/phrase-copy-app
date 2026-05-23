@@ -1,7 +1,7 @@
 import type { PhraseRead } from "@/types/phrase"
 
 /** Client-only id for a row that is not saveed to the API yet. */
-export const DRAFT_PHRASE_ID = -1
+export const DRAFT_PHRASE_ID = "--draft--"
 
 export function isDraftPhraseId(id: number): boolean {
   return id < 0

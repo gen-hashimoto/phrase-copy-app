@@ -30,7 +30,7 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
   const [isPending, startTransition] = useTransition()
   const [banner, setBanner] = useState<string | null>(null)
   const [draftRow, setDraftRow] = useState<PhraseRead | null>(null)
-  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
   const [content, setEditContent] = useState("")
 
   const displayPhrases = draftRow != null ? [...phrases, draftRow] : phrases
@@ -115,7 +115,7 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
     refreshList()
   }
 
-  async function handleDelete(id: number) {
+  async function handleDelete(id: string) {
     if (!window.confirm("このフレーズを削除しますか？")) return
     setBanner(null)
     const res = await fetch(`/api/phrases/${id}`, { method: "DELETE" })

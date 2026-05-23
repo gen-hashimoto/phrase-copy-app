@@ -8,10 +8,11 @@ class PhraseRepository:
         self.db = db
 
     def list_all(self) -> list[Phrase]:
-        stmt = select(Phrase).order_by(Phrase.id.asc())
+        # This is temporary. Step 06 changes ordering to Phrase.position.
+        stmt = select(Phrase).order_by(Phrase.created_at.asc())
         return list(self.db.scalars(stmt).all())
 
-    def get_by_id(self, phrase_id: int) -> Phrase | None:
+    def get_by_id(self, phrase_id: str) -> Phrase | None:
         row = self.db.get(Phrase, phrase_id)
         return row
 

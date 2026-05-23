@@ -15,19 +15,19 @@ class PhraseService:
     def create_phrase(self, body: PhraseCreate) -> Phrase:
         return self.repo.create(body.content)
 
-    def get_phrase(self, phrase_id: int) -> Phrase:  # todo: id はuuidの予定
+    def get_phrase(self, phrase_id: str) -> Phrase:
         row = self.repo.get_by_id(phrase_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Phrase not found")
         return row
 
-    def delete_phrase(self, phrase_id: int) -> None:
+    def delete_phrase(self, phrase_id: str) -> None:
         row = self.repo.get_by_id(phrase_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Phrase not found")
         self.repo.delete(row)
 
-    def update_phrase(self, phrase_id: int, body: PhraseUpdate) -> Phrase:
+    def update_phrase(self, phrase_id: str, body: PhraseUpdate) -> Phrase:
         row = self.repo.get_by_id(phrase_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Phrase not found")

@@ -13,8 +13,6 @@ def new_uuid() -> str:
 
 
 class Phrase(Base):
-    """定型文(見本モデル)。"""
-
     __tablename__ = "phrases"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)

@@ -10,7 +10,7 @@ const DEFAULT_MS = 1000
  */
 
 export function useCopiedFeedback(durationMs = DEFAULT_MS) {
-  const [copiedId, setCopiedId] = useState<number | "all" | null>(null)
+  const [copiedId, setCopiedId] = useState<string | "all" | null>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const clearTimer = useCallback(() => {
@@ -21,7 +21,7 @@ export function useCopiedFeedback(durationMs = DEFAULT_MS) {
   }, [])
 
   const showCopied = useCallback(
-    (id: number | "all") => {
+    (id: string | "all") => {
       clearTimer()
       setCopiedId(id)
       timerRef.current = setTimeout(() => {
@@ -37,6 +37,6 @@ export function useCopiedFeedback(durationMs = DEFAULT_MS) {
   return {
     copiedId,
     showCopied,
-    isCopied: (id: number | "all") => copiedId === id,
+    isCopied: (id: string | "all") => copiedId === id,
   }
 }

@@ -1,0 +1,11 @@
+CREATE TABLE users (
+  id CHAR(36) NOT NULL PRIMARY KEY,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  magic_link_token_hash CHAR(64) NULL,
+  magic_link_expires_at DATETIME NULL,
+  magic_link_used_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+CREATE INDEX ix_users_email ON users (email);
