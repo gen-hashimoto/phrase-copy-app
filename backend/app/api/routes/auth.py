@@ -36,6 +36,12 @@ class MagicLinkVerifyRequest(BaseModel):
     token: str
 
 
+def ensure_utc(dt: datetime) -> datetime:
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 @router.post("/magic-link", response_model=MagicLinkResponse)
 def request_magic_link(body: MagicLinkRequest, db: Session = Depends(get_db)):
     email = body.email.lower()
@@ -56,7 +62,7 @@ def request_magic_link(body: MagicLinkRequest, db: Session = Depends(get_db)):
     return MagicLinkResponse(ok=True, dev_link=f"/auth/verify?token={token}")
 
 
-@router.post("magic-link/verify")
+@router.post("/magic-link/verify")
 def verify_magic_link(
     body: MagicLinkVerifyRequest, response: Response, db: Session = Depends(get_db)
 ):
@@ -68,7 +74,8 @@ def verify_magic_link(
     # Treat missing, expired, or already-used links as failed authentication.
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid magic link")
-    if user.magic_link_expires_at is None or user.magic_link_expires_at <= now:
+    exprires_at = user.magic_link_expires_at
+    if exprires_at is None or ensure_utc(exprires_at) <= now:
         raise HTTPException(status_code=401, detail="Magic link expired")
     if user.magic_link_used_at is not None:
         raise HTTPException(status_code=401, detail="Magic link already used")
@@ -83,7 +90,7 @@ def verify_magic_link(
     return {"ok": True, "user": {"id": user.id, "email": user.email}}
 
 
-@router.post("logout")
+@router.post("/logout")
 def logout(response: Response):
     clear_auth_cookie(response, secure=settings.cookie_secure)
     return {"ok": True}
