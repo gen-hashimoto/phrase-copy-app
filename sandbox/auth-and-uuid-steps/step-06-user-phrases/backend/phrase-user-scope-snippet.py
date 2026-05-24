@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_current_user, get_db
 from app.models.phrase import Phrase
 from app.models.user import User
-from app.schemas.phrase import PhraseCreate, PhraseRead
+from app.schemas.phrase import PhraseCreate, PhraseRead, PhraseUpdate
 
 
 class PhraseRepository:
@@ -32,6 +32,16 @@ class PhraseRepository:
         self.db.refresh(row)
         return row
 
+    def update(self, row: Phrase, content: str) -> Phrase:
+        row.content = content
+        self.db.commit()
+        self.db.refresh(row)
+        return row
+
+    def delete(self, row: Phrase) -> None:
+        self.db.delete(row)
+        self.db.commit()
+
 
 router = APIRouter()
 
@@ -56,3 +66,31 @@ def get_phrase(
     if row is None:
         raise HTTPException(status_code=404, detail="Phrase not found")
     return row
+
+
+@router.put("/{phrase_id}", response_model=PhraseRead)
+def update_phrase(
+    phrase_id: str,
+    body: PhraseUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    repo = PhraseRepository(db)
+    row = repo.get_by_user_and_id(current_user.id, phrase_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Phrase not found")
+    return repo.update(row, body.content)
+
+
+@router.delete("/{phrase_id}")
+def delete_phrase(
+    phrase_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    repo = PhraseRepository(db)
+    row = repo.get_by_user_and_id(current_user.id, phrase_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Phrase not found")
+    repo.delete(row)
+    return {"deleted": True}

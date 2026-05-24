@@ -1,6 +1,19 @@
-import { PhraseManager } from "@/components/phrase-manager"
+import { GuestPhraseList } from "@/components/guest-phrase-list"
+import { UserPhraseList } from "@/components/user-phrase-list"
 import { serverAppOrigin } from "@/lib/server-app-origin"
 import type { PhraseRead } from "@/types/phrase"
+import type { User } from "@/types/user"
+
+async function fetchMe(): Promise<User | null> {
+  const origin = await serverAppOrigin()
+  const res = await fetch(`${origin}/api/auth/me`, {
+    cache: "no-store",
+    credentials: "include",
+  })
+  if (res.status === 401) return null
+  if (!res.ok) throw Error("error")
+  return res.json().then((data) => data.user)
+}
 
 async function fetchPhrases(): Promise<PhraseRead[]> {
   const origin = await serverAppOrigin()
@@ -14,6 +27,19 @@ async function fetchPhrases(): Promise<PhraseRead[]> {
 }
 
 export default async function Page() {
+  // before login
+  const me = await fetchMe()
+  if (me === null) {
+    return (
+      <div className="flex min-h-svh flex-col gap-4 p-6">
+        <header>
+          <h1 className="text-lg font-medium">Phrases</h1>
+        </header>
+        <GuestPhraseList />
+      </div>
+    )
+  }
+
   let phrases: PhraseRead[]
 
   try {
@@ -35,7 +61,7 @@ export default async function Page() {
         <p className="text-sm text-muted-foreground">{phrases.length} 件</p>
       </header>
 
-      <PhraseManager phrases={phrases} />
+      <UserPhraseList phrases={phrases} />
     </div>
   )
 }

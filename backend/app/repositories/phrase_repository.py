@@ -24,16 +24,6 @@ class PhraseRepository:
         self.db.refresh(row)
         return row
 
-    def update(self, row: Phrase, content: str) -> Phrase:
-        row.content = content
-        self.db.commit()
-        self.db.refresh(row)
-        return row
-
-    def delete(self, row: Phrase) -> None:
-        self.db.delete(row)
-        self.db.commit()
-
     def list_by_user(self, user_id: str) -> list[Phrase]:
         stmt = (
             select(Phrase)
@@ -53,3 +43,13 @@ class PhraseRepository:
         self.db.commit()
         self.db.refresh(row)
         return row
+
+    def update(self, row: Phrase, content: str) -> Phrase:
+        row.content = content
+        self.db.commit()
+        self.db.refresh(row)
+        return row
+
+    def delete(self, row: Phrase) -> None:
+        self.db.delete(row)
+        self.db.commit()

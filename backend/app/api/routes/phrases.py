@@ -3,7 +3,7 @@ from app.schemas.phrase import PhraseCreate, PhraseRead, PhraseUpdate
 from app.services.phrase_service import PhraseService
 from sqlalchemy.orm import Session
 from app.api.deps import get_db, get_current_user
-from models.user import User
+from app.models.user import User
 
 router = APIRouter()
 
@@ -36,14 +36,23 @@ def get_phrase(
     return service.get_phrase(current_user.id, phrase_id)
 
 
-@router.delete("/{phrase_id}")
-def delete_phrase(phrase_id: str, db: Session = Depends(get_db)):
-    service = PhraseService(db)
-    service.delete_phrase(phrase_id)
-    return {"deleted": True}
-
-
 @router.put("/{phrase_id}", response_model=PhraseRead)
-def update_phrase(phrase_id: str, body: PhraseUpdate, db: Session = Depends(get_db)):
+def update_phrase(
+    phrase_id: str,
+    body: PhraseUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     service = PhraseService(db)
-    return service.update_phrase(phrase_id, body)
+    return service.update_phrase(current_user.id, phrase_id, body)
+
+
+@router.delete("/{phrase_id}")
+def delete_phrase(
+    phrase_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    service = PhraseService(db)
+    service.delete_phrase(current_user.id, phrase_id)
+    return {"deleted": True}

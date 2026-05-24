@@ -44,6 +44,7 @@
 backend/phrase-model-user-scope-snippet.py -> backend/app/models/phrase.py
 backend/deps-current-user-snippet.py -> backend/app/api/deps.py
 backend/phrase-user-scope-snippet.py -> backend/app/repositories/phrase_repository.py / backend/app/api/routes/phrases.py など
+backend/phrase-service-user-scope-snippet.py -> backend/app/services/phrase_service.py / backend/app/api/routes/phrases.py
 frontend/app/page.tsx
 frontend/components/phrase-manager.tsx
 ```
