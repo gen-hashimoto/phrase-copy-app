@@ -8,22 +8,28 @@
 
 `sql/add-user-id-position-to-phrases.sql` を参考に列を追加する。
 
-| 列 | 用途 |
-| ---- | ------ |
-| `user_id` | `users.id` への外部キー |
+
+| 列          | 用途                      |
+| ---------- | ----------------------- |
+| `user_id`  | `users.id` への外部キー       |
 | `position` | 表示順。UUID の辞書順や作成日時に頼らない |
+
 
 既存データがある場合は、開発用 seed user を作って既存 phrase に `user_id` を埋めるか、開発 DB を作り直す。
 
 #### B. Backend
 
-| ファイル | 変更 |
-| ---------- | ------ |
-| `backend/app/models/phrase.py` | `user_id`, `position` を追加 |
-| `backend/app/api/deps.py` | `get_current_user` を追加 |
+サンプルは `backend/` 配下に置く。
+
+
+| ファイル                                            | 変更                                   |
+| ----------------------------------------------- | ------------------------------------ |
+| `backend/app/models/phrase.py`                  | `user_id`, `position` を追加            |
+| `backend/app/api/deps.py`                       | `get_current_user` を追加               |
 | `backend/app/repositories/phrase_repository.py` | `list_by_user`, `get_by_user_and_id` |
-| `backend/app/services/phrase_service.py` | すべての操作に `user_id` を渡す |
-| `backend/app/api/routes/phrases.py` | `current_user` dependency を追加 |
+| `backend/app/services/phrase_service.py`        | すべての操作に `user_id` を渡す                |
+| `backend/app/api/routes/phrases.py`             | `current_user` dependency を追加        |
+
 
 ### 未ログイン時 `useState` との境界
 
@@ -35,11 +41,9 @@
 ### コピー先
 
 ```text
-backend/app/models/phrase.py
-backend/app/api/deps.py
-backend/app/repositories/phrase_repository.py
-backend/app/services/phrase_service.py
-backend/app/api/routes/phrases.py
+backend/phrase-model-user-scope-snippet.py -> backend/app/models/phrase.py
+backend/deps-current-user-snippet.py -> backend/app/api/deps.py
+backend/phrase-user-scope-snippet.py -> backend/app/repositories/phrase_repository.py / backend/app/api/routes/phrases.py など
 frontend/app/page.tsx
 frontend/components/phrase-manager.tsx
 ```

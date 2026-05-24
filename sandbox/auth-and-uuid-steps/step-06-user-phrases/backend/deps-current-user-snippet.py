@@ -17,11 +17,14 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+def get_current_user(
+    request: Request,
+    db: Session = Depends(get_db),
+) -> User:
     # The JWT is stored in an HttpOnly cookie, so routes use the request cookie.
     user_id = read_user_id_from_request(request, settings.jwt_secret)
     user = db.get(User, user_id)
     if user is None:
         # A valid token can still point to a user that was deleted.
-        raise HTTPException(status_code=401, detail="Not Authenticated")
+        raise HTTPException(status_code=401, detail="Not authenticated")
     return user

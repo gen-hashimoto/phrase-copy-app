@@ -9,14 +9,14 @@ class PhraseService:
     def __init__(self, db: Session):
         self.repo = PhraseRepository(db)
 
-    def list_phrases(self) -> list[Phrase]:
-        return self.repo.list_all()
+    def list_phrases(self, user_id: str) -> list[Phrase]:
+        return self.repo.list_by_user(user_id)
 
-    def create_phrase(self, body: PhraseCreate) -> Phrase:
-        return self.repo.create(body.content)
+    def create_phrase(self, user_id: str, body: PhraseCreate) -> Phrase:
+        return self.repo.create_for_user(user_id, body)
 
-    def get_phrase(self, phrase_id: str) -> Phrase:
-        row = self.repo.get_by_id(phrase_id)
+    def get_phrase(self, user_id: str, phrase_id: str) -> Phrase:
+        row = self.repo.get_by_user_and_id(user_id, phrase_id)
         if row is None:
             raise HTTPException(status_code=404, detail="Phrase not found")
         return row

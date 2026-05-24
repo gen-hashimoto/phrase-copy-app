@@ -22,7 +22,9 @@ class Phrase(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=False), server_default=func.now(), nullable=False
     )
+    # Every stored phrase belongs to exactly one authenticated user.
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id"), nullable=False
     )
+    # Keep display order independent from UUID ordering or created_at.
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
