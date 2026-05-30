@@ -10,9 +10,11 @@ export function isDraftPhraseId(id: string): boolean {
 /** Build a placeholder row appended at the bottom of the table. */
 /** After step5, omit `title` from PhraseRead and this object. */
 export function createDraftPhraseRow(): PhraseRead {
+  const now = new Date().toISOString()
   return {
     id: DRAFT_PHRASE_ID,
     content: "",
-    created_at: new Date().toISOString(),
+    created_at: now,
+    updated_at: now,
   }
 }

@@ -10,9 +10,11 @@ class PhraseUpdate(BaseModel):
     content: str = Field(..., min_length=1)
 
 
-class PhraseRead(PhraseCreate):
+class PhraseRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: str
     content: str
     created_at: datetime
+    # Expose the last edit time in every phrase response.
+    updated_at: datetime

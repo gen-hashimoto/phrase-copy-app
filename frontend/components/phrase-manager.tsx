@@ -58,10 +58,14 @@ export function PhraseManager({
     if (mode === "guest") {
       if (!onGuestChange) return
 
+      // Use one timestamp so created_at and updated_at match on guest create.
+      const now = new Date().toISOString()
+
       const nextPhrase: PhraseRead = {
         id: crypto.randomUUID(),
         content: nextContent,
-        created_at: new Date().toISOString(),
+        created_at: now,
+        updated_at: now,
       }
 
       onGuestChange([...phrases, nextPhrase])
@@ -154,7 +158,14 @@ export function PhraseManager({
 
       onGuestChange(
         phrases.map((p) =>
-          p.id === editingId ? { ...p, content: nextContent } : p
+          p.id === editingId
+            ? // Guest edits happen in local state, so update the timestamp manually.
+              {
+                ...p,
+                content: nextContent,
+                updated_at: new Date().toISOString(),
+              }
+            : p
         )
       )
       setBanner("更新しました。")

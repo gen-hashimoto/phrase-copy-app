@@ -302,7 +302,8 @@ phrases.map((p) =>
 ### 動作確認
 
 1. migration 後、既存 phrase に `updated_at` が入っている。
-2. 新規作成した phrase は `created_at` と `updated_at` が入っている。
+2.  新規作成した phrase は `created_at` と `updated_at` が入っている。
 3. phrase を編集すると `updated_at` が変わる。
 4. `GET /phrases` の JSON に `updated_at` が含まれる。
 5. frontend の型エラーが出ない。
+

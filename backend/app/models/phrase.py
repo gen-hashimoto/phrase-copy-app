@@ -18,11 +18,19 @@ class Phrase(Base):
     __tablename__ = "phrases"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_uuid)
-    content: Mapped[str] = mapped_column(Text(), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=False), server_default=func.now(), nullable=False
-    )
     user_id: Mapped[str] = mapped_column(
         String(36), ForeignKey("users.id"), nullable=False
     )
+    content: Mapped[str] = mapped_column(Text(), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=False),
+        # Let the database set the initial timestamp.
+        server_default=func.now(),
+        # Let SQLAlchemy update the timestamp on ORM-managed updates.
+        onupdate=func.now(),
+        nullable=False,
+    )

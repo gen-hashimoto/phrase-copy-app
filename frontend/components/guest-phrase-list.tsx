@@ -39,19 +39,19 @@ export function GuestPhraseList() {
     <>
       {hasUnsavedGuestPhrases ? (
         <p className="text-sm text-muted-foreground">
-          未ログイン中はデータベースに保存されません。フレーズをコピーしてから画面移動してください。
+          未ログイン中はフレーズが保存されません。コピーしてから画面移動してください。
         </p>
       ) : null}
       <PhraseManager
         mode="guest"
         phrases={phrases}
         onGuestChange={setPhrases}
-        limit={10}
+        limit={GUEST_LIMIT}
       />
-      <p className="text-sm text-muted-foreground">
-        {phrases.length} / {GUEST_LIMIT} used
-      </p>
-
+      {/* Investigation note: usage display owned by GuestPhraseList. */}
+      {/* <p className="text-sm text-muted-foreground"> */}
+      {/*   {phrases.length} / {GUEST_LIMIT} used */}
+      {/* </p> */}
       {!canAddGuestPhrase() ? (
         <p className="text-sm text-muted-foreground">
           ログインすると {GUEST_LIMIT} 件を超えて保存できます。
