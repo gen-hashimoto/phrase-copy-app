@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useCallback, useState, useTransition } from "react"
+import { useCallback, useState, useTransition, useRef, useEffect } from "react"
 
 import type { PhraseRead } from "@/types/phrase"
 import { Button } from "@/components/ui/button"
@@ -113,6 +113,27 @@ export function PhraseManager({
     setEditingId(null)
     setEditContent("")
   }
+
+  function isImeComposing(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Some browser / IME combinations report "Process" during composition.
+    return e.nativeEvent.isComposing || e.key === "Process"
+  }
+
+  const editTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+
+  useEffect(() => {
+    if (editingId === null) return
+
+    const textarea = editTextareaRef.current
+    if (textarea === null) return
+
+    // Focus after React has rendered the edit textarea.
+    textarea.focus()
+
+    // Put the caret at the end so the user can keep typing immediately.
+    const end = textarea.value.length
+    textarea.setSelectionRange(end, end)
+  }, [editingId])
 
   async function handleSaveEdit(nextContent: string) {
     const error = validatePhraseContent(nextContent)
@@ -240,6 +261,7 @@ export function PhraseManager({
                   <TableCell className="align-top">
                     <div className="flex flex-col gap-2">
                       <textarea
+                        ref={editTextareaRef}
                         className={cn(
                           fieldClass,
                           "min-h-20 resize-y",
@@ -254,11 +276,17 @@ export function PhraseManager({
                         aria-invalid={banner != null}
                         onKeyDown={(e) => {
                           if (e.key === "Escape") {
+                            // Escape is an app shortcut, so prevent the browser default first.
                             e.preventDefault()
                             cancelEdit()
                             return
                           }
+
+                          // Ignore shortcut handling while the user is confirming IME conversion.
+                          if (isImeComposing(e)) return
+
                           if (e.key === "Enter" && !e.shiftKey) {
+                            // Plain Enter saves; Shift + Enter remains a normal textarea newline.
                             e.preventDefault()
                             handleSaveEdit(content)
                           }
