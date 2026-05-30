@@ -3,19 +3,20 @@ import { NextResponse } from "next/server"
 import { apiOrigin, forwardedCookie } from "@/lib/api-origin"
 
 export async function GET(request: Request) {
-  const backendres = await fetch(`${apiOrigin()}/phrases`, {
+  const backendRes = await fetch(`${apiOrigin()}/phrases`, {
     cache: "no-store",
     headers: {
       cookie: forwardedCookie(request),
     },
   })
-  const data = await backendres.json().catch(() => ({ error: "invalid json" }))
-  return NextResponse.json(data, { status: backendres.status })
+
+  const data = await backendRes.json().catch(() => ({ error: "invalid json" }))
+  return NextResponse.json(data, { status: backendRes.status })
 }
 
 export async function POST(request: Request) {
   const body = await request.text()
-  const backendres = await fetch(`${apiOrigin()}/phrases`, {
+  const backendRes = await fetch(`${apiOrigin()}/phrases`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -23,6 +24,7 @@ export async function POST(request: Request) {
     },
     body,
   })
-  const data = await backendres.json().catch(() => ({ error: "invalid json" }))
-  return NextResponse.json(data, { status: backendres.status })
+
+  const data = await backendRes.json().catch(() => ({ error: "invalid json" }))
+  return NextResponse.json(data, { status: backendRes.status })
 }

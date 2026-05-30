@@ -16,7 +16,12 @@ export function GuestPhraseList() {
 
   return (
     <>
-      <PhraseManager phrases={phrases} />
+      <PhraseManager
+        mode="guest"
+        phrases={phrases}
+        onGuestChange={setPhrases}
+        limit={10}
+      />
       <p className="text-sm text-muted-foreground">
         {phrases.length} / {GUEST_LIMIT} used
       </p>

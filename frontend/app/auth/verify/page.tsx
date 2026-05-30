@@ -8,7 +8,6 @@ export default function VerifyPage() {
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
 
-  // token の有無は render で決める。effect 内で同期的に setState しない。
   const [verifyError, setVerifyError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -20,6 +19,7 @@ export default function VerifyPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token }),
       })
+
       if (!res.ok) {
         setVerifyError("リンクが無効、または有効期限切れです。")
         return
@@ -32,12 +32,16 @@ export default function VerifyPage() {
   }, [router, token])
 
   if (!token) {
-    return <p className="p-6 text-sm text-muted-foreground">無効なリンクです。</p>
+    return (
+      <p className="p-6 text-sm text-muted-foreground">無効なリンクです。</p>
+    )
   }
 
   if (verifyError) {
     return <p className="p-6 text-sm text-muted-foreground">{verifyError}</p>
   }
 
-  return <p className="p-6 text-sm text-muted-foreground">ログイン確認中です...</p>
+  return (
+    <p className="p-6 text-sm text-muted-foreground">ログイン確認中です...</p>
+  )
 }

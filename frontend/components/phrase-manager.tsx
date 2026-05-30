@@ -20,12 +20,20 @@ import { validatePhraseContent } from "@/lib/validate-phrase-content"
 
 type PhraseManagerProps = {
   phrases: PhraseRead[]
+  mode: "guest" | "user"
+  onGuestChange?: (phrases: PhraseRead[]) => void
+  limit?: number
 }
 
 const fieldClass =
   "border-input bg-background w-full min-w-0 rounded-md border px-2 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
 
-export function PhraseManager({ phrases }: PhraseManagerProps) {
+export function PhraseManager({
+  phrases,
+  mode,
+  onGuestChange,
+  limit,
+}: PhraseManagerProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [banner, setBanner] = useState<string | null>(null)
@@ -37,6 +45,8 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
 
   const { showCopied, isCopied } = useCopiedFeedback()
 
+  const isAtLimit = mode === "guest" && limit != null && phrases.length >= limit
+
   function refreshList() {
     startTransition(() => {
       router.refresh()
@@ -44,6 +54,23 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
   }
 
   async function handleCreate(nextContent: string) {
+    // guest
+    if (mode === "guest") {
+      if (!onGuestChange) return
+
+      const nextPhrase: PhraseRead = {
+        id: crypto.randomUUID(),
+        content: nextContent,
+        created_at: new Date().toISOString(),
+      }
+
+      onGuestChange([...phrases, nextPhrase])
+      clearDraft()
+      setBanner("追加しました。")
+      return
+    }
+
+    // user
     setBanner(null)
     const res = await fetch("/api/phrases", {
       method: "POST",
@@ -88,6 +115,21 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
   }
 
   async function handleSaveEdit(nextContent: string) {
+    // guest
+    if (mode === "guest") {
+      if (!onGuestChange || editingId === null) return
+
+      onGuestChange(
+        phrases.map((p) =>
+          p.id === editingId ? { ...p, content: nextContent } : p
+        )
+      )
+      setBanner("更新しました。")
+      cancelEdit()
+      return
+    }
+
+    // user
     const error = validatePhraseContent(nextContent)
     if (error) {
       setBanner(error)
@@ -116,6 +158,17 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
   }
 
   async function handleDelete(id: string) {
+    // guest
+    if (mode === "guest") {
+      if (!onGuestChange) return
+
+      onGuestChange(phrases.filter((p) => p.id !== id))
+      setBanner("削除しました。")
+      cancelEdit()
+      return
+    }
+
+    // user
     if (!window.confirm("このフレーズを削除しますか？")) return
     setBanner(null)
     const res = await fetch(`/api/phrases/${id}`, { method: "DELETE" })
@@ -253,12 +306,16 @@ export function PhraseManager({ phrases }: PhraseManagerProps) {
       <div className="flex items-center gap-4">
         <AddPhraseControl
           phrases={phrases}
-          disabled={editingId === draftRow?.id}
+          disabled={editingId === draftRow?.id || isAtLimit}
           onStartDraft={startDraft}
         />
-        <p className="text-sm text-muted-foreground">
-          {phrases.length} / 10 used
-        </p>
+        {mode === "guest" ? (
+          <p className="text-sm text-muted-foreground">
+            {phrases.length} / {limit} used
+          </p>
+        ) : (
+          <p className="text-sm text-muted-foreground">{phrases.length} 件</p>
+        )}
       </div>
     </div>
   )

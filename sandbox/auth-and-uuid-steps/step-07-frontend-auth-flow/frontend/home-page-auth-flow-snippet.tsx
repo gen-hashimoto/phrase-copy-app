@@ -8,7 +8,7 @@ import { serverAppOrigin } from "@/lib/server-app-origin"
 import type { PhraseRead } from "@/types/phrase"
 import type { User } from "@/types/user"
 
-async function cookieHeaderFromRequest(): Promise<string> {
+function cookieHeaderFromRequest(): Promise<string> {
   return cookies().then((cookieStore) => cookieStore.toString())
 }
 
@@ -36,15 +36,17 @@ async function fetchPhrases(): Promise<PhraseRead[]> {
     cache: "no-store",
     headers: { cookie },
   })
+
   if (!res.ok) {
     throw new Error(`GET /api/phrases failed (${res.status} ${res.statusText})`)
   }
+
   return res.json()
 }
 
 export default async function Page() {
-  // before login
   const me = await fetchMe()
+
   if (me === null) {
     return (
       <main className="flex min-h-svh flex-col gap-4 p-6">
@@ -59,32 +61,13 @@ export default async function Page() {
             Login
           </Link>
         </header>
+
         <GuestPhraseList />
       </main>
     )
   }
 
-  let phrases: PhraseRead[]
-
-  try {
-    phrases = await fetchPhrases()
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    return (
-      <main className="flex min-h-svh flex-col gap-4 p-6">
-        <header className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-medium">Phrases</h1>
-            <p className="text-sm text-muted-foreground">{me.email}</p>
-          </div>
-          <LogoutButton />
-        </header>
-        <p className="text-sm text-destructive">
-          フレーズ一覧の取得に失敗しました: {message}
-        </p>
-      </main>
-    )
-  }
+  const phrases = await fetchPhrases()
 
   return (
     <main className="flex min-h-svh flex-col gap-4 p-6">

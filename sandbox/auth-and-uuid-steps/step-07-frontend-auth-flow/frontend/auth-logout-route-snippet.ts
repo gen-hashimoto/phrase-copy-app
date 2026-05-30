@@ -1,18 +1,19 @@
-import { apiOrigin } from "@/lib/api-origin"
 import { NextResponse } from "next/server"
 
+import { apiOrigin, forwardedCookie } from "@/lib/api-origin"
+
 export async function POST(request: Request) {
-  // Forward the raw request body so backend validation stays the source of truth.
-  const body = await request.text()
-  const backendRes = await fetch(`${apiOrigin()}/auth/magic-link/verify`, {
+  const backendRes = await fetch(`${apiOrigin()}/auth/logout`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body,
+    headers: {
+      cookie: forwardedCookie(request),
+    },
   })
+
   const data = await backendRes.json().catch(() => ({ error: "invalid json" }))
   const res = NextResponse.json(data, { status: backendRes.status })
 
-  // Forward Set-Cookie from backend to the browser.
+  // FastAPI が返す expired cookie を browser に転送して session を消す。
   const setCookie = backendRes.headers.get("set-cookie")
   if (setCookie) {
     res.headers.set("set-cookie", setCookie)

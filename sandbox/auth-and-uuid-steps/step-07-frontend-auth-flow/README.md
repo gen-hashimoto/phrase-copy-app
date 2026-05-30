@@ -19,8 +19,20 @@ login form、Magic Link request、verify callback、logout、API proxy の cooki
 | ------- | --------- |
 | `POST /api/auth/magic-link` | `POST /auth/magic-link` |
 | `POST /api/auth/verify` | `POST /auth/magic-link/verify` |
+| `GET /api/auth/me` | `GET /auth/me` |
 | `POST /api/auth/logout` | `POST /auth/logout` |
-| `/api/phrases` | cookie を backend に転送して `/phrases` |
+| `GET /api/phrases` | cookie を backend に転送して `GET /phrases` |
+| `POST /api/phrases` | cookie を backend に転送して `POST /phrases` |
+| `PUT /api/phrases/[id]` | cookie を backend に転送して `PUT /phrases/{id}` |
+| `DELETE /api/phrases/[id]` | cookie を backend に転送して `DELETE /phrases/{id}` |
+
+#### C. 共通 helper
+
+`API_BASE_URL` を読む `apiOrigin()` は各 route に毎回書かず、`frontend/lib/api-origin.ts` のような helper にまとめる。
+
+```text
+frontend/api-origin-snippet.ts -> frontend/lib/api-origin.ts
+```
 
 ### cookie を扱うポイント
 
@@ -40,12 +52,32 @@ login form、Magic Link request、verify callback、logout、API proxy の cooki
 ```text
 frontend/app/login/page.tsx
 frontend/app/auth/verify/page.tsx
+frontend/app/page.tsx
+frontend/lib/api-origin.ts
 frontend/app/api/auth/magic-link/route.ts
 frontend/app/api/auth/verify/route.ts
+frontend/app/api/auth/me/route.ts
 frontend/app/api/auth/logout/route.ts
 frontend/app/api/phrases/route.ts
 frontend/app/api/phrases/[id]/route.ts
 frontend/components/logout-button.tsx
+```
+
+### snippet 対応表
+
+```text
+frontend/api-origin-snippet.ts -> frontend/lib/api-origin.ts
+frontend/auth-magic-link-route-snippet.ts -> frontend/app/api/auth/magic-link/route.ts
+frontend/auth-verify-route-snippet.ts -> frontend/app/api/auth/verify/route.ts
+frontend/auth-me-route-snippet.ts -> frontend/app/api/auth/me/route.ts
+frontend/auth-logout-route-snippet.ts -> frontend/app/api/auth/logout/route.ts
+frontend/phrases-route-snippet.ts -> frontend/app/api/phrases/route.ts
+frontend/phrases-id-route-snippet.ts -> frontend/app/api/phrases/[id]/route.ts
+frontend/login-form-snippet.tsx -> frontend/components/login-form.tsx
+frontend/login-page-snippet.tsx -> frontend/app/login/page.tsx
+frontend/verify-callback-page-snippet.tsx -> frontend/app/auth/verify/page.tsx
+frontend/logout-button-snippet.tsx -> frontend/components/logout-button.tsx
+frontend/home-page-auth-flow-snippet.tsx -> frontend/app/page.tsx
 ```
 
 ### 動作確認

@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server"
+
 import { apiOrigin } from "@/lib/api-origin"
 
 export async function POST(request: Request) {
   const body = await request.text()
   const backendRes = await fetch(`${apiOrigin()}/auth/magic-link`, {
     method: "POST",
-    headers: { "Content-type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body,
   })
 
