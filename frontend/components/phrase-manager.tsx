@@ -115,9 +115,21 @@ export function PhraseManager({
   }
 
   async function handleSaveEdit(nextContent: string) {
+    const error = validatePhraseContent(nextContent)
+    if (error) {
+      setBanner(error)
+      window.alert(error)
+      return
+    }
+    if (editingId === null) return
+    if (editingId === DRAFT_PHRASE_ID) {
+      handleCreate(nextContent)
+      return
+    }
+
     // guest
     if (mode === "guest") {
-      if (!onGuestChange || editingId === null) return
+      if (!onGuestChange) return
 
       onGuestChange(
         phrases.map((p) =>
@@ -130,17 +142,6 @@ export function PhraseManager({
     }
 
     // user
-    const error = validatePhraseContent(nextContent)
-    if (error) {
-      setBanner(error)
-      window.alert(error)
-      return
-    }
-    if (editingId === null) return
-    if (editingId === DRAFT_PHRASE_ID) {
-      handleCreate(nextContent)
-      return
-    }
     setBanner(null)
     const res = await fetch(`/api/phrases/${editingId}`, {
       method: "PUT",
@@ -218,18 +219,20 @@ export function PhraseManager({
         </p>
       ) : null}
 
-      {phrases.length === 0 ? (
+      {displayPhrases.length === 0 ? (
         <p className="text-sm text-muted-foreground">フレーズがありません。</p>
       ) : (
         <>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isCopied("all") || phrases.length === 0}
-            onClick={() => void handleCopyAll()}
-          >
-            {isCopied("all") ? "Copied!" : "Copy All"}
-          </Button>
+          {phrases.length > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isCopied("all")}
+              onClick={() => void handleCopyAll()}
+            >
+              {isCopied("all") ? "Copied!" : "Copy All"}
+            </Button>
+          ) : null}
           <PhraseTableShell>
             {displayPhrases.map((p) =>
               editingId === p.id ? (
