@@ -51,9 +51,6 @@ export default async function Page() {
         <header className="flex items-center justify-between gap-4">
           <div>
             <h1 className="text-lg font-medium">Phrases</h1>
-            <p className="text-sm text-muted-foreground">
-              未ログイン中はブラウザ内だけで管理します。
-            </p>
           </div>
           <Link className="rounded-md border px-3 py-2" href="/login">
             Login
