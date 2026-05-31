@@ -204,13 +204,12 @@ export function PhraseManager({
     }
 
     // user
-    if (!window.confirm("このフレーズを削除しますか？")) return
     setBanner(null)
     const res = await fetch(`/api/phrases/${id}`, { method: "DELETE" })
     if (!res.ok) {
       const text = await res.text()
       setBanner(`削除に失敗しました (${res.status}): ${text}`)
-      return
+      throw new Error(text)
     }
     setBanner("削除しました。")
     // id は削除した行、editingId は編集中の行。一致するときだけ編集状態を片付ける。
@@ -328,8 +327,8 @@ export function PhraseManager({
                     <PhraseRowActions
                       onCopy={() => void handleCopy(p)}
                       disabledCopy={isCopied(p.id)}
-                      onDelete={() => void handleDelete(p.id)}
-                      disabledDelete={isPending}
+                      onDelete={() => handleDelete(p.id)}
+                      phrasePreview={p.content}
                     />
                   </PhraseDisplayRow>
                 )

@@ -3,7 +3,7 @@
 import { Trash2 } from "lucide-react"
 import type { MouseEvent } from "react"
 import { useState } from "react"
-
+import { IconActionButton } from "@/components/icon-action-button"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,22 +15,18 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Button } from "@/components/ui/button"
 
-type DeletePhraseAlertDialogProps = {
+type Props = {
   phrasePreview: string
-  onDelete: () => Promise<void> | void
+  onDelete: () => Promise<void>
 }
 
-export function DeletePhraseAlertDialog({
-  phrasePreview,
-  onDelete,
-}: DeletePhraseAlertDialogProps) {
+export function DeletePhraseAlertDialog({ phrasePreview, onDelete }: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
   async function handleDelete(event: MouseEvent<HTMLButtonElement>) {
-    // AlertDialogActionは通常クリック時に閉じるため、削除成功時だけ閉じるように制御する。
+    // AlertDialogAction は通常クリック時に閉じるため、削除成功時だけ閉じるように制御する。
     event.preventDefault()
     setIsDeleting(true)
     try {
@@ -51,14 +47,11 @@ export function DeletePhraseAlertDialog({
       }}
     >
       <AlertDialogTrigger asChild>
-        <Button
-          aria-label="Delete phrase"
-          size="icon"
-          type="button"
+        <IconActionButton
+          label="Delete phrase"
+          icon={Trash2}
           variant="destructive"
-        >
-          <Trash2 aria-hidden="true" />
-        </Button>
+        />
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
@@ -75,7 +68,11 @@ export function DeletePhraseAlertDialog({
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-          <AlertDialogAction disabled={isDeleting} onClick={handleDelete}>
+          <AlertDialogAction
+            variant="destructive"
+            disabled={isDeleting}
+            onClick={handleDelete}
+          >
             {isDeleting ? "Deleting..." : "Delete"}
           </AlertDialogAction>
         </AlertDialogFooter>

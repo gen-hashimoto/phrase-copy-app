@@ -14,7 +14,7 @@ type IconActionButtonProps = {
   label: string
   icon: LucideIcon
   variant?: React.ComponentProps<typeof Button>["variant"]
-  onClick: () => void
+  onClick?: () => void
   disabled?: boolean
 }
 
