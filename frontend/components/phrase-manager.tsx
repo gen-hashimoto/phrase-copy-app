@@ -9,7 +9,9 @@ import { TableCell, TableRow } from "@/components/ui/table"
 import { PhraseTableShell } from "@/components/phrase-table-shell"
 import { PhraseDisplayRow } from "@/components/phrase-display-row"
 import { AddPhraseControl } from "@/components/add-phrase-control"
-import { EditModeActions } from "@/components/edit-mode-actions"
+import { PhraseEditActions } from "@/components/phrase-edit-actions"
+import { PhraseRowActions } from "@/components/phrase-row-actions"
+import { TooltipProvider } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 import { copyTextToClipboard } from "@/lib/copy-to-clipboard"
 import { getPhraseCopyText } from "@/lib/phrase-copy-text"
@@ -265,84 +267,75 @@ export function PhraseManager({
               {isCopied("all") ? "Copied!" : "Copy All"}
             </Button>
           ) : null}
-          <PhraseTableShell>
-            {displayPhrases.map((p) =>
-              editingId === p.id ? (
-                <TableRow key={p.id}>
-                  <TableCell className="align-top">
-                    <div className="flex flex-col gap-2">
-                      <textarea
-                        ref={editTextareaRef}
-                        className={cn(
-                          fieldClass,
-                          "min-h-20 resize-y",
-                          banner != null && "border-destructive"
-                        )}
-                        value={content}
-                        onChange={(e) => {
-                          setEditContent(e.target.value)
-                          setBanner(null)
-                        }}
-                        aria-label="フレーズを編集"
-                        aria-invalid={banner != null}
-                        onKeyDown={(e) => {
-                          if (e.key === "Escape") {
-                            // Escape is an app shortcut, so prevent the browser default first.
-                            e.preventDefault()
-                            cancelEdit()
-                            return
-                          }
+          <TooltipProvider>
+            <PhraseTableShell>
+              {displayPhrases.map((p) =>
+                editingId === p.id ? (
+                  <TableRow key={p.id}>
+                    <TableCell className="align-top">
+                      <div className="flex flex-col gap-2">
+                        <textarea
+                          ref={editTextareaRef}
+                          className={cn(
+                            fieldClass,
+                            "min-h-20 resize-y",
+                            banner != null && "border-destructive"
+                          )}
+                          value={content}
+                          onChange={(e) => {
+                            setEditContent(e.target.value)
+                            setBanner(null)
+                          }}
+                          aria-label="フレーズを編集"
+                          aria-invalid={banner != null}
+                          onKeyDown={(e) => {
+                            if (e.key === "Escape") {
+                              // Escape is an app shortcut, so prevent the browser default first.
+                              e.preventDefault()
+                              cancelEdit()
+                              return
+                            }
 
-                          // Ignore shortcut handling while the user is confirming IME conversion.
-                          if (isImeComposing(e)) return
+                            // Ignore shortcut handling while the user is confirming IME conversion.
+                            if (isImeComposing(e)) return
 
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            // Plain Enter saves; Shift + Enter remains a normal textarea newline.
-                            e.preventDefault()
-                            handleSaveEdit(content)
-                          }
-                        }}
+                            if (e.key === "Enter" && !e.shiftKey) {
+                              // Plain Enter saves; Shift + Enter remains a normal textarea newline.
+                              e.preventDefault()
+                              handleSaveEdit(content)
+                            }
+                          }}
+                        />
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <PhraseEditActions
+                        onOk={() => void handleSaveEdit(content)}
+                        disabledOk={false}
+                        onCancel={cancelEdit}
+                        disabledCancel={false}
                       />
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <EditModeActions
-                      disabled={false}
-                      onOk={() => void handleSaveEdit(content)}
-                      onCancel={cancelEdit}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  <PhraseDisplayRow
+                    key={p.id}
+                    phrase={p}
+                    isCopied={isCopied(p.id)}
+                    isEditing={false}
+                    onStartEdit={startEdit}
+                  >
+                    <PhraseRowActions
+                      onCopy={() => void handleCopy(p)}
+                      disabledCopy={isCopied(p.id)}
+                      onDelete={() => void handleDelete(p.id)}
+                      disabledDelete={isPending}
                     />
-                  </TableCell>
-                </TableRow>
-              ) : (
-                <PhraseDisplayRow
-                  key={p.id}
-                  phrase={p}
-                  isCopied={isCopied(p.id)}
-                  isEditing={false}
-                  onStartEdit={startEdit}
-                >
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    disabled={isCopied(p.id)}
-                    onClick={() => void handleCopy(p)}
-                  >
-                    {isCopied(p.id) ? "Copied!" : "Copy"}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    disabled={isPending}
-                    onClick={() => void handleDelete(p.id)}
-                  >
-                    削除
-                  </Button>
-                </PhraseDisplayRow>
-              )
-            )}
-          </PhraseTableShell>
+                  </PhraseDisplayRow>
+                )
+              )}
+            </PhraseTableShell>
+          </TooltipProvider>
         </>
       )}
       <div className="flex items-center gap-4">

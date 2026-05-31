@@ -94,7 +94,6 @@ export default async function Page() {
         </div>
         <LogoutButton />
       </header>
-
       <UserPhraseList phrases={phrases} />
     </main>
   )
