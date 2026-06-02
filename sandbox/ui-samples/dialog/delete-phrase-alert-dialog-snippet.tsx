@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button"
 
 type DeletePhraseAlertDialogProps = {
   phrasePreview: string
-  onDelete: () => Promise<void> | void
+  onDelete: () => Promise<void>
 }
 
 export function DeletePhraseAlertDialog({
@@ -69,13 +69,17 @@ export function DeletePhraseAlertDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <blockquote className="rounded-lg border bg-muted p-3 text-sm">
+        <blockquote className="overflow-x-auto whitespace-pre rounded-lg border bg-muted p-3 text-sm">
           {phrasePreview}
         </blockquote>
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-          <AlertDialogAction disabled={isDeleting} onClick={handleDelete}>
+          <AlertDialogAction
+            variant="destructive"
+            disabled={isDeleting}
+            onClick={handleDelete}
+          >
             {isDeleting ? "Deleting..." : "Delete"}
           </AlertDialogAction>
         </AlertDialogFooter>

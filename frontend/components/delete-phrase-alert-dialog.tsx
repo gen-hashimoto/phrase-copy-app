@@ -62,7 +62,7 @@ export function DeletePhraseAlertDialog({ phrasePreview, onDelete }: Props) {
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <blockquote className="rounded-lg border bg-muted p-3 text-sm">
+        <blockquote className="overflow-x-auto rounded-lg border bg-muted p-3 text-sm whitespace-pre">
           {phrasePreview}
         </blockquote>
 

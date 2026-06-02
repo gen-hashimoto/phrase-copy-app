@@ -120,25 +120,25 @@ export function PhraseManager({
     setEditContent("")
   }
 
-  function isImeComposing(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+  function isImeComposing(e: React.KeyboardEvent<HTMLInputElement>) {
     // Some browser / IME combinations report "Process" during composition.
     return e.nativeEvent.isComposing || e.key === "Process"
   }
 
-  const editTextareaRef = useRef<HTMLTextAreaElement | null>(null)
+  const editInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (editingId === null) return
 
-    const textarea = editTextareaRef.current
-    if (textarea === null) return
+    const input = editInputRef.current
+    if (input === null) return
 
     // Focus after React has rendered the edit textarea.
-    textarea.focus()
+    input.focus()
 
     // Put the caret at the end so the user can keep typing immediately.
-    const end = textarea.value.length
-    textarea.setSelectionRange(end, end)
+    const end = input.value.length
+    input.setSelectionRange(end, end)
   }, [editingId])
 
   async function handleSaveEdit(nextContent: string) {
@@ -271,13 +271,13 @@ export function PhraseManager({
               {displayPhrases.map((p) =>
                 editingId === p.id ? (
                   <TableRow key={p.id}>
-                    <TableCell className="align-top">
+                    <TableCell className="max-w-0 min-w-0 align-middle">
                       <div className="flex flex-col gap-2">
-                        <textarea
-                          ref={editTextareaRef}
+                        <input
+                          ref={editInputRef}
                           className={cn(
                             fieldClass,
-                            "min-h-20 resize-y",
+                            "h-8",
                             banner != null && "border-destructive"
                           )}
                           value={content}
@@ -307,7 +307,7 @@ export function PhraseManager({
                         />
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="w-20 text-right align-middle">
                       <PhraseEditActions
                         onOk={() => void handleSaveEdit(content)}
                         disabledOk={false}

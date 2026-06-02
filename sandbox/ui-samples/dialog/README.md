@@ -7,6 +7,7 @@ Phrase削除の確認UIを、shadcn/ui の `AlertDialog` で実装するため�
 ## サンプル
 
 - `delete-phrase-alert-dialog-snippet.tsx`
+- `phrase-row-layout-adjustment-snippet.tsx`
 
 ## 追加する shadcn/ui
 
@@ -59,7 +60,60 @@ Phrasesでは次のルールを推奨します。
 - Copyは確認不要。
 - Saveはフォーム上の明示操作なので確認不要。
 - Cancelは未保存変更がある場合だけ、将来的に確認を検討する。
-- AlertDialog内には削除対象のPhrase本文を短く表示する。
+- AlertDialog内には削除対象のPhrase本文を表示し、長い場合もスクロールして確認できるようにする。
+
+## Phase4内で合わせておく調整
+
+### 入力UI
+
+最初の実装では、Phrase入力・編集は `textarea` ではなく `input` でよいです。
+
+理由:
+
+- まずは単一行の短いPhraseを主対象にする。
+- Enter保存などのキーボード操作をシンプルに保てる。
+- 複数行入力が明確に必要になった時点で `textarea` に拡張する。
+
+将来的に長文や改行を扱う場合は、Phase3のレスポンシブ調整と合わせて `textarea` 化を検討します。
+
+### 表示モードと編集モードの列幅
+
+表示モードと編集モードで、内容カラムと操作カラムの幅が変わらないようにします。
+
+方針:
+
+- Table全体は横幅いっぱいに使う。
+- 内容カラムは残り幅を使う。
+- 操作カラムは Copy / Delete / Save / Cancel ボタンの幅に合わせて固定寄りにする。
+- 表示モード・編集モードのどちらでも、操作ボタンは右寄せにする。
+- 編集中だけ入力欄やボタン位置が大きくずれないようにする。
+
+実装例は `phrase-row-layout-adjustment-snippet.tsx` を参照します。
+
+### 長いPhraseの表示
+
+一覧表示でも削除確認Dialog内でも、長いPhraseは折り返さず、横スクロールして確認できる形を優先します。
+
+推奨:
+
+- 一覧の内容セルは `overflow-x-auto` を使い、セル内で横スクロールできるようにする。
+- 削除確認Dialog内のPreviewも、3点リーダーだけで隠さず、横スクロールして全文を確認できるようにする。
+- 折り返しを避けるため、`whitespace-pre` を使う。
+- 3点リーダーは省スペースには有効だが、削除確認のように内容確認が目的のUIでは使わない。
+
+例:
+
+```tsx
+<div className="overflow-x-auto whitespace-pre">
+  {phrase.content}
+</div>
+```
+
+```tsx
+<blockquote className="overflow-x-auto whitespace-pre rounded-lg border bg-muted p-3 text-sm">
+  {phrasePreview}
+</blockquote>
+```
 
 ## このPhaseでの推奨
 
