@@ -15,6 +15,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { cn } from "@/lib/utils"
 
 type Props = {
   phrasePreview: string
@@ -55,14 +56,19 @@ export function DeletePhraseAlertDialog({ phrasePreview, onDelete }: Props) {
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete this phrase?</AlertDialogTitle>
+          <AlertDialogTitle>このフレーズを削除しますか？</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. The phrase below will be permanently
-            deleted.
+            この操作は取り消せません。下記のフレーズは完全に削除されます。
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        <blockquote className="overflow-x-auto rounded-lg border bg-muted p-3 text-sm whitespace-pre">
+        <blockquote
+          className={cn(
+            "overflow-x-auto rounded-lg border bg-muted p-3 text-sm whitespace-pre",
+            "[scrollbar-width:none] hover:[scrollbar-width:thin]",
+            "[&::-webkit-scrollbar]:h-0 hover:[&::-webkit-scrollbar]:h-1.5"
+          )}
+        >
           {phrasePreview}
         </blockquote>
 

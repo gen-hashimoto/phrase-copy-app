@@ -1,5 +1,5 @@
 /**
- * Content cell opens edit on double-click / double-tap.a
+ * Content cell opens edit on double-click / double-tap
  */
 "use client"
 
@@ -10,20 +10,14 @@ import { useEffect, useRef, useState } from "react"
 
 type Props = {
   phrase: PhraseRead
-  isEditing: boolean
   isCopied: boolean
   onStartEdit: (phrase: PhraseRead) => void
 }
 
-export function PhraseContentCell({
-  phrase,
-  isEditing,
-  isCopied,
-  onStartEdit,
-}: Props) {
+export function PhraseContentCell({ phrase, isCopied, onStartEdit }: Props) {
   const handleDoubleTap = usePhraseDoubleTapEdit(onStartEdit, phrase)
 
-  // 内容がはみ出している時の検知
+  // 右側にまだ隠れている内容があるか
   const ref = useRef<HTMLDivElement | null>(null)
   const [hasHiddenRight, setHasHiddenRight] = useState(false)
 
@@ -31,20 +25,17 @@ export function PhraseContentCell({
     const el = ref.current
     if (!el) return
 
-    const nexttHasHiddenRight =
+    const nextHasHiddenRight =
       el.scrollLeft + el.clientWidth < el.scrollWidth - 1
     // 値が変わった時だけ再レンダリング
     setHasHiddenRight((current) =>
-      current === nexttHasHiddenRight ? current : nexttHasHiddenRight
+      current === nextHasHiddenRight ? current : nextHasHiddenRight
     )
   }
 
   useEffect(() => {
     updateFade()
   }, [phrase.content])
-
-  // 編集中
-  if (isEditing) return null
 
   return (
     <div className="relative min-w-0">

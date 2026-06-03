@@ -7,7 +7,8 @@ import type { PhraseRead } from "@/types/phrase"
 import { Button } from "@/components/ui/button"
 import { TableCell, TableRow } from "@/components/ui/table"
 import { PhraseTableShell } from "@/components/phrase-table-shell"
-import { PhraseDisplayRow } from "@/components/phrase-display-row"
+import { PhraseContentCell } from "@/components/phrase-content-cell"
+import { PhraseEditCell } from "@/components/phrase-edit-cell"
 import { AddPhraseControl } from "@/components/add-phrase-control"
 import { PhraseEditActions } from "@/components/phrase-edit-actions"
 import { PhraseRowActions } from "@/components/phrase-row-actions"
@@ -26,9 +27,6 @@ type PhraseManagerProps = {
   onGuestChange?: (phrases: PhraseRead[]) => void
   limit?: number
 }
-
-const fieldClass =
-  "border-input bg-background w-full min-w-0 rounded-md border px-2 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
 
 export function PhraseManager({
   phrases,
@@ -119,27 +117,6 @@ export function PhraseManager({
     setEditingId(null)
     setEditContent("")
   }
-
-  function isImeComposing(e: React.KeyboardEvent<HTMLInputElement>) {
-    // Some browser / IME combinations report "Process" during composition.
-    return e.nativeEvent.isComposing || e.key === "Process"
-  }
-
-  const editInputRef = useRef<HTMLInputElement | null>(null)
-
-  useEffect(() => {
-    if (editingId === null) return
-
-    const input = editInputRef.current
-    if (input === null) return
-
-    // Focus after React has rendered the edit textarea.
-    input.focus()
-
-    // Put the caret at the end so the user can keep typing immediately.
-    const end = input.value.length
-    input.setSelectionRange(end, end)
-  }, [editingId])
 
   async function handleSaveEdit(nextContent: string) {
     const error = validatePhraseContent(nextContent)
@@ -272,40 +249,15 @@ export function PhraseManager({
                 editingId === p.id ? (
                   <TableRow key={p.id}>
                     <TableCell className="max-w-0 min-w-0 align-middle">
-                      <div className="flex flex-col gap-2">
-                        <input
-                          ref={editInputRef}
-                          className={cn(
-                            fieldClass,
-                            "h-8",
-                            banner != null && "border-destructive"
-                          )}
-                          value={content}
-                          onChange={(e) => {
-                            setEditContent(e.target.value)
-                            setBanner(null)
-                          }}
-                          aria-label="フレーズを編集"
-                          aria-invalid={banner != null}
-                          onKeyDown={(e) => {
-                            if (e.key === "Escape") {
-                              // Escape is an app shortcut, so prevent the browser default first.
-                              e.preventDefault()
-                              cancelEdit()
-                              return
-                            }
-
-                            // Ignore shortcut handling while the user is confirming IME conversion.
-                            if (isImeComposing(e)) return
-
-                            if (e.key === "Enter" && !e.shiftKey) {
-                              // Plain Enter saves; Shift + Enter remains a normal textarea newline.
-                              e.preventDefault()
-                              handleSaveEdit(content)
-                            }
-                          }}
-                        />
-                      </div>
+                      <PhraseEditCell
+                        editingId={editingId}
+                        content={content}
+                        banner={banner}
+                        setEditContent={setEditContent}
+                        setBanner={setBanner}
+                        cancelEdit={cancelEdit}
+                        handleSaveEdit={handleSaveEdit}
+                      />
                     </TableCell>
                     <TableCell className="w-20 text-right align-middle">
                       <PhraseEditActions
@@ -317,20 +269,28 @@ export function PhraseManager({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  <PhraseDisplayRow
+                  <TableRow
                     key={p.id}
-                    phrase={p}
-                    isCopied={isCopied(p.id)}
-                    isEditing={false}
-                    onStartEdit={startEdit}
+                    className={cn(
+                      isCopied(p.id) && "bg-primary/10 transition-colors"
+                    )}
                   >
-                    <PhraseRowActions
-                      onCopy={() => void handleCopy(p)}
-                      disabledCopy={isCopied(p.id)}
-                      onDelete={() => handleDelete(p.id)}
-                      phrasePreview={p.content}
-                    />
-                  </PhraseDisplayRow>
+                    <TableCell className="max-w-0 min-w-0 align-middle text-sm">
+                      <PhraseContentCell
+                        phrase={p}
+                        isCopied={isCopied(p.id)}
+                        onStartEdit={startEdit}
+                      />
+                    </TableCell>
+                    <TableCell className="w-20 text-right align-middle">
+                      <PhraseRowActions
+                        onCopy={() => void handleCopy(p)}
+                        disabledCopy={isCopied(p.id)}
+                        onDelete={() => handleDelete(p.id)}
+                        phrasePreview={p.content}
+                      />
+                    </TableCell>
+                  </TableRow>
                 )
               )}
             </PhraseTableShell>
