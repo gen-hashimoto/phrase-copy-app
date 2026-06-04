@@ -2,8 +2,8 @@
 /** action buttons while a row is in view mode */
 
 import { Copy, Check } from "lucide-react"
-import { IconActionButton } from "@/components/icon-action-button"
-import { DeletePhraseAlertDialog } from "@/components/delete-phrase-alert-dialog"
+import { IconActionButton } from "@/components/phrase-actions/icon-action-button"
+import { DeletePhraseAlertDialog } from "@/components/phrase-actions/delete-phrase-alert-dialog"
 
 type Props = {
   onCopy: () => void

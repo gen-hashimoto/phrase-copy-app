@@ -3,7 +3,7 @@
 import { Trash2 } from "lucide-react"
 import type { MouseEvent } from "react"
 import { useState } from "react"
-import { IconActionButton } from "@/components/icon-action-button"
+import { IconActionButton } from "@/components/phrase-actions/icon-action-button"
 import {
   AlertDialog,
   AlertDialogAction,
