@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useEffect } from "react"
+import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
 type Props = {
@@ -12,9 +13,6 @@ type Props = {
   cancelEdit: () => void
   handleSaveEdit: (value: string) => Promise<void> | void
 }
-
-const fieldClass =
-  "border-input bg-background w-full min-w-0 rounded-md border px-2 py-1.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/50"
 
 export function PhraseEditCell({
   editingId,
@@ -46,9 +44,12 @@ export function PhraseEditCell({
     input.setSelectionRange(end, end)
   }, [editingId])
   return (
-    <input
+    <Input
       ref={editInputRef}
-      className={cn(fieldClass, "h-8", banner != null && "border-destructive")}
+      className={cn(
+        "h-8 rounded-md text-sm",
+        banner != null && "border-destructive"
+      )}
       value={content}
       onChange={(e) => {
         setEditContent(e.target.value)

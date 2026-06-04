@@ -8,6 +8,7 @@ Phrase削除の確認UIを、shadcn/ui の `AlertDialog` で実装するため�
 
 - `delete-phrase-alert-dialog-snippet.tsx`
 - `phrase-row-layout-adjustment-snippet.tsx`
+- `phase-4-1-magic-link-account/`
 
 ## 追加する shadcn/ui
 
@@ -57,10 +58,17 @@ Phrase削除は元に戻せない操作です。誤タップが起きやすい�
 Phrasesでは次のルールを推奨します。
 
 - Deleteは必ず `AlertDialog` を通す。
+- 未登録メールの初回マジックリンク要求では、アカウント作成確認の `AlertDialog` を出す。
 - Copyは確認不要。
 - Saveはフォーム上の明示操作なので確認不要。
 - Cancelは未保存変更がある場合だけ、将来的に確認を検討する。
 - AlertDialog内には削除対象のPhrase本文を表示し、長い場合もスクロールして確認できるようにする。
+
+## Phase4-1: マジックリンクとアカウント作成確認
+
+現状は `POST /auth/magic-link` の時点で、未登録メールなら `users` レコードが作成されます。リンク検証時ではありません。
+
+そのため、初回マジックリンク要求では「アカウントが作成されます」と明示し、同意後にだけ作成する仕様を推奨します。詳細は `phase-4-1-magic-link-account/README.md` を参照します。
 
 ## Phase4内で合わせておく調整
 

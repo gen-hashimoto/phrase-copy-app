@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server"
+
 import { apiOrigin } from "@/lib/api-origin"
 
 type BackendErrorDetail =
   | string
   | {
-      // FastAPI returns structured errors under `detail`.
+      // FastAPI may put structured error data under `detail`.
       // This route extracts the stable code for the client component.
       code?: string
       message?: string
@@ -12,11 +13,11 @@ type BackendErrorDetail =
 
 export async function POST(request: Request) {
   // Forward the raw request body so the backend remains the validation source.
-  // This also lets the backend own the confirmation contract.
+  // This also lets the backend own the confirmation flag contract.
   const body = await request.text()
   const backendRes = await fetch(`${apiOrigin()}/auth/magic-link`, {
     method: "POST",
-    headers: { "Content-type": "application/json" },
+    headers: { "Content-Type": "application/json" },
     body,
   })
 
@@ -27,16 +28,18 @@ export async function POST(request: Request) {
 
   // Normalize the account-confirmation response for the React form.
   // The component can check `data.code` instead of knowing FastAPI's
-  // default `{detail: ...}` error envelope.
-  if (backendRes.status === 409 && typeof detail === "object" && detail?.code) {
+  // default `{ detail: ... }` error envelope.
+  if (
+    backendRes.status === 409 &&
+    typeof detail === "object" &&
+    detail?.code
+  ) {
     return NextResponse.json(
       {
         code: detail.code,
-        message: detail.message ?? "Confirmation is required",
+        error: detail.message ?? "Confirmation is required.",
       },
-      {
-        status: backendRes.status,
-      }
+      { status: backendRes.status }
     )
   }
 

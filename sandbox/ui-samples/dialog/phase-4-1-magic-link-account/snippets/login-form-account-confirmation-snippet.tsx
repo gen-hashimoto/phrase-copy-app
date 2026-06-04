@@ -1,9 +1,19 @@
 "use client"
 
 import { useState } from "react"
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ConfirmAccountCreationAlertDialog } from "@/components/confirm-account-creation-alert-dialog"
 
 type MagicLinkResponse = {
   ok?: boolean
@@ -20,11 +30,11 @@ type MagicLinkResponse = {
 
 // Keep this value shared conceptually with the backend.
 // In production code, consider exporting it from a small shared constants module
-// if the frontend and backend live in the TypeScript package.
+// if the frontend and backend live in the same TypeScript package.
 const ACCOUNT_CREATION_CONFIRMATION_REQUIRED =
   "ACCOUNT_CREATION_CONFIRMATION_REQUIRED"
 
-export function LoginForm() {
+export function LoginFormAccountConfirmationSample() {
   const [email, setEmail] = useState("")
   const [message, setMessage] = useState<string | null>(null)
   const [devLink, setDevLink] = useState<string | null>(null)
@@ -62,15 +72,12 @@ export function LoginForm() {
       const data = (await res.json()) as MagicLinkResponse
 
       // The error code may come from the backend directly (`detail.code`)
-      // or from the Next.js proxy route after normalization (`code`)
+      // or from the Next.js proxy route after normalization (`code`).
       const errorCode = data.code ?? data.detail?.code
 
       // 409 means "the request is valid, but needs user confirmation first".
       // Do not show this as a failure message; open the confirmation dialog.
-      if (
-        res.status === 409 &&
-        errorCode === ACCOUNT_CREATION_CONFIRMATION_REQUIRED
-      ) {
+      if (res.status === 409 && errorCode === ACCOUNT_CREATION_CONFIRMATION_REQUIRED) {
         setPendingEmail(normalizedEmail)
         return
       }
@@ -119,7 +126,7 @@ export function LoginForm() {
           初めて利用するメールアドレスの場合、確認後にアカウントが作成されます。
         </p>
 
-        <Button type="submit" disabled={isSubmitting}>
+        <Button disabled={isSubmitting} type="submit">
           {isSubmitting ? "Sending..." : "Send Magic Link"}
         </Button>
 
@@ -128,12 +135,39 @@ export function LoginForm() {
         ) : null}
         {devLink ? <a href={devLink}>Open dev link</a> : null}
       </form>
-      <ConfirmAccountCreationAlertDialog
-        pendingEmail={pendingEmail}
-        setPendingEmail={setPendingEmail}
-        isSubmitting={isSubmitting}
-        requestMagicLink={requestMagicLink}
-      />
+
+      <AlertDialog
+        open={pendingEmail !== null}
+        onOpenChange={(open) => {
+          // Closing the dialog means the user backed out.
+          // Because the backend has not created the account yet, clearing
+          // `pendingEmail` is enough to cancel the flow.
+          if (!open) setPendingEmail(null)
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>アカウントを作成しますか？</AlertDialogTitle>
+            <AlertDialogDescription>
+              {pendingEmail} はまだ登録されていません。続行すると、このメールアドレスで
+              アカウントを作成し、マジックリンクを送信します。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isSubmitting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isSubmitting}
+              onClick={() => {
+                // The second submit explicitly allows account creation.
+                // This is the only path that can create a user for a new email.
+                void requestMagicLink(true)
+              }}
+            >
+              アカウントを作成してリンクを送信
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }
