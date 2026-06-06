@@ -55,7 +55,9 @@ export function DeletePhraseAlertDialog({
         <AlertDialogHeader>
           <AlertDialogTitle>このフレーズを削除しますか？</AlertDialogTitle>
           <AlertDialogDescription>
-            この操作は取り消せません。下記のフレーズは完全に削除されます。
+            この操作は取り消せません。
+            <br />
+            下記のフレーズは完全に削除されます。
           </AlertDialogDescription>
         </AlertDialogHeader>
 

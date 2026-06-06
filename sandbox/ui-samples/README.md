@@ -9,6 +9,7 @@ PhrasesプロジェクトのUI改善を段階的に検討するためのsandbox�
 | Phase1 | `icon-buttons` | Copy / Delete / Save / Cancel をアイコンボタンへ統一し、Tooltipとアクセシビリティを整理する |
 | Phase2 | `dark-mode` | `next-themes` と shadcn/ui のCSS変数を使ってLight / Dark / Systemを切り替える |
 | Phase3 | `responsive-layout` | Phrase一覧のDesktop/Mobile表示案を比較し、推奨レイアウトを決める |
+| Phase3-1 | `responsive-layout/phase-3-1-card-only` | Cardコンポーネント1種類で `sm` 以上はTable風、Mobileは縦積みにする |
 | Phase4 | `dialog` | Phrase削除を `AlertDialog` で確認する方針にする |
 | Phase4-1 | `dialog/phase-4-1-magic-link-account` | 初回マジックリンク要求時のアカウント作成確認を設計する |
 | Phase5 | `toast` | 操作成功・認証状態の通知方針を決め、sonnerとshadcn/ui toastを比較する |
@@ -22,9 +23,10 @@ PhrasesプロジェクトのUI改善を段階的に検討するためのsandbox�
 2. Phase4: Delete確認のAlertDialog
 3. Phase4-1: マジックリンク時のアカウント作成確認
 4. Phase5: Toast通知方針
-5. Phase3: レスポンシブ一覧
-6. Phase2: ダークモード
-7. Phase6: Header / Footer 共通化
+5. Phase3: レスポンシブ一覧の比較
+6. Phase3-1: Card Only方針の整理
+7. Phase2: ダークモード
+8. Phase6: Header / Footer 共通化
 
 理由は、まず既存のPhrase一覧に近い操作UIから改善し、その後に通知・レイアウト・全体テーマへ広げる方が、変更範囲を小さく保てるためです。
 
@@ -36,7 +38,7 @@ PhrasesプロジェクトのUI改善を段階的に検討するためのsandbox�
 2. Deleteだけ `AlertDialog` を通す。
 3. 未登録メールの初回マジックリンク要求では、アカウント作成確認を出す。
 4. Copy成功はアイコン変化、作成/更新/削除/認証はToastに分ける。
-5. Desktop Table / Mobile Card の案Aへ移行する。
+5. Cardコンポーネント1種類で、`sm` 以上はTable風、Mobileは縦積みにする。
 6. `next-themes` の `ThemeProvider` と `ThemeToggle` を入れる。
 7. Header / Footer を `AppShell` として共通化する。
 
@@ -69,8 +71,10 @@ frontend/components/
     phrase-edit-actions.tsx
     delete-phrase-alert-dialog.tsx
   phrase-list/
-    phrase-table.tsx
-    phrase-card-list.tsx
+    phrase-list.tsx
+    phrase-card.tsx
+    phrase-card-content.tsx
+    phrase-list-header.tsx
 ```
 
 ### 反映時の考え方
@@ -94,7 +98,7 @@ frontend/components/
 | アカウント作成確認 | 未登録メールの初回マジックリンク要求で `AlertDialog` を出す |
 | Toast | shadcn の `sonner`（`npx shadcn add sonner`）を採用する |
 | Copy成功 | Toastなし。Checkアイコンへの一時変化のみ |
-| レスポンシブ | 案A: DesktopはTable、MobileはCard |
+| レスポンシブ | Phase3-1: Card 1種類。`sm` 以上はTable風、Mobileは縦積み |
 | ダークモード | `next-themes` の `class` 切り替え。初期値はSystem |
 | Header/Footer | Server Componentの `AppShell` に集約し、Theme ToggleとLogoutだけClient Componentにする |
 
@@ -102,4 +106,4 @@ frontend/components/
 
 ## 最終的な導入イメージ
 
-まず一覧の操作UIをPhase1/4/5で整え、次にPhase3でMobile Cardを追加します。その後、Phase2とPhase6でアプリ全体のテーマと共通レイアウトを整えると、学習しながら安全に本番へ反映できます。
+まず一覧の操作UIをPhase1/4/5で整え、次にPhase3でレスポンシブ案を比較し、Phase3-1でCard Only方針へ落とし込みます。その後、Phase2とPhase6でアプリ全体のテーマと共通レイアウトを整えると、学習しながら安全に本番へ反映できます。

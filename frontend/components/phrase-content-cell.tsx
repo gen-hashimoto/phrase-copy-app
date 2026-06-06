@@ -38,11 +38,11 @@ export function PhraseContentCell({ phrase, isCopied, onStartEdit }: Props) {
   }, [phrase.content])
 
   return (
-    <div className="relative min-w-0">
+    <div className="relative grid w-full min-w-0 gap-1">
       <div
         ref={ref}
         className={cn(
-          "flex min-h-8 w-full min-w-0 items-center overflow-x-auto text-sm whitespace-pre",
+          "flex min-h-8 items-center overflow-x-auto text-sm whitespace-pre",
           "[scrollbar-width:none] hover:[scrollbar-width:thin]",
           "[&::-webkit-scrollbar]:h-0 hover:[&::-webkit-scrollbar]:h-1.5",
           isCopied ? "text-foreground" : "text-muted-foreground"
@@ -59,7 +59,7 @@ export function PhraseContentCell({ phrase, isCopied, onStartEdit }: Props) {
       >
         {phrase.content}
       </div>
-      {hasHiddenRight ? (
+      {hasHiddenRight && !isCopied ? (
         <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent" />
       ) : null}
     </div>

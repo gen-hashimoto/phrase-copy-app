@@ -44,7 +44,7 @@ export function PhraseEditCell({
     input.setSelectionRange(end, end)
   }, [editingId])
   return (
-    <>
+    <div className="grid w-full min-w-0 gap-1">
       <Input
         ref={editInputRef}
         className={cn(
@@ -82,6 +82,6 @@ export function PhraseEditCell({
           {error}
         </p>
       ) : null}
-    </>
+    </div>
   )
 }

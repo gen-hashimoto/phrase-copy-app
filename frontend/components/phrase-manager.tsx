@@ -5,8 +5,8 @@ import { useCallback, useState, useTransition } from "react"
 
 import type { PhraseRead } from "@/types/phrase"
 import { Button } from "@/components/ui/button"
-import { TableCell, TableRow } from "@/components/ui/table"
-import { PhraseTableShell } from "@/components/phrase-table-shell"
+import { PhraseList } from "@/components/phrase-list/phrase-list"
+import { PhraseCard } from "@/components/phrase-list/phrase-card"
 import { PhraseContentCell } from "@/components/phrase-content-cell"
 import { PhraseEditCell } from "@/components/phrase-edit-cell"
 import { AddPhraseControl } from "@/components/add-phrase-control"
@@ -251,11 +251,11 @@ export function PhraseManager({
             </Button>
           ) : null}
           <TooltipProvider>
-            <PhraseTableShell>
+            <PhraseList>
               {displayPhrases.map((p) =>
                 editingId === p.id ? (
-                  <TableRow key={p.id}>
-                    <TableCell className="max-w-0 min-w-0 align-middle">
+                  <PhraseCard key={p.id}>
+                    <div className="w-full min-w-0 flex-1">
                       <PhraseEditCell
                         editingId={editingId}
                         content={content}
@@ -265,42 +265,43 @@ export function PhraseManager({
                         cancelEdit={cancelEdit}
                         handleSaveEdit={handleSaveEdit}
                       />
-                    </TableCell>
-                    <TableCell className="w-20 text-right align-middle">
+                    </div>
+                    <div className="shrink-0">
                       <PhraseEditActions
                         onOk={() => void handleSaveEdit(content)}
                         disabledOk={false}
                         onCancel={cancelEdit}
                         disabledCancel={false}
                       />
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </PhraseCard>
                 ) : (
-                  <TableRow
+                  <PhraseCard
                     key={p.id}
                     className={cn(
-                      isCopied(p.id) && "bg-primary/10 transition-colors"
+                      (isCopied(p.id) || isCopied("all")) &&
+                        "bg-primary/10 transition-colors"
                     )}
                   >
-                    <TableCell className="max-w-0 min-w-0 align-middle text-sm">
+                    <div className="w-full min-w-0 flex-1">
                       <PhraseContentCell
                         phrase={p}
-                        isCopied={isCopied(p.id)}
+                        isCopied={isCopied(p.id) || isCopied("all")}
                         onStartEdit={startEdit}
                       />
-                    </TableCell>
-                    <TableCell className="w-20 text-right align-middle">
+                    </div>
+                    <div className="shrink-0">
                       <PhraseRowActions
                         onCopy={() => void handleCopy(p)}
                         disabledCopy={isCopied(p.id)}
                         onDelete={() => handleDelete(p.id)}
                         phrasePreview={p.content}
                       />
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                  </PhraseCard>
                 )
               )}
-            </PhraseTableShell>
+            </PhraseList>
           </TooltipProvider>
         </>
       )}
