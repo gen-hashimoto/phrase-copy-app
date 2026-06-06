@@ -20,6 +20,8 @@ import { useCopiedFeedback } from "@/hooks/use-copied-feedback"
 import { joinPhrasesForCopyAll } from "@/lib/join-phrases-for-copy-all"
 import { createDraftPhraseRow, DRAFT_PHRASE_ID } from "@/lib/draft-phrase"
 import { validatePhraseContent } from "@/lib/validate-phrase-content"
+import { toast } from "sonner"
+import { Copy, Check } from "lucide-react"
 
 type PhraseManagerProps = {
   phrases: PhraseRead[]
@@ -36,7 +38,7 @@ export function PhraseManager({
 }: PhraseManagerProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [banner, setBanner] = useState<string | null>(null)
+  const [editError, setEditError] = useState<string | null>(null)
   const [draftRow, setDraftRow] = useState<PhraseRead | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [content, setEditContent] = useState("")
@@ -70,12 +72,11 @@ export function PhraseManager({
 
       onGuestChange([...phrases, nextPhrase])
       clearDraft()
-      setBanner("追加しました。")
+      toast.success("作成しました。")
       return
     }
 
     // user
-    setBanner(null)
     const res = await fetch("/api/phrases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -83,24 +84,25 @@ export function PhraseManager({
     })
     if (!res.ok) {
       const text = await res.text()
-      setBanner(`作成に失敗しました (${res.status}): ${text}`)
+      toast.error(`作成に失敗しました (${res.status}): ${text}`)
       return
     }
     clearDraft()
-    setBanner("作成しました。")
+    toast.success("作成しました。")
     refreshList()
   }
 
   const startEdit = useCallback((p: PhraseRead) => {
     setEditingId(p.id)
     setEditContent(p.content)
-    setBanner(null)
+    setEditError(null)
   }, [])
 
   function startDraft() {
     setDraftRow(createDraftPhraseRow())
     setEditingId(DRAFT_PHRASE_ID)
     setEditContent("")
+    setEditError(null)
   }
 
   function cancelEdit() {
@@ -121,8 +123,7 @@ export function PhraseManager({
   async function handleSaveEdit(nextContent: string) {
     const error = validatePhraseContent(nextContent)
     if (error) {
-      setBanner(error)
-      window.alert(error)
+      setEditError(error)
       return
     }
     if (editingId === null) return
@@ -147,25 +148,25 @@ export function PhraseManager({
             : p
         )
       )
-      setBanner("更新しました。")
+      toast.success("保存しました。")
       cancelEdit()
       return
     }
 
     // user
-    setBanner(null)
     const res = await fetch(`/api/phrases/${editingId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({
+        content: nextContent,
+      }),
     })
     if (!res.ok) {
-      const text = await res.text()
-      setBanner(`更新に失敗しました (${res.status}): ${text}`)
+      toast.error("保存に失敗しました。")
       return
     }
-    setBanner("更新しました。")
     cancelEdit()
+    toast.success("保存しました。")
     refreshList()
   }
 
@@ -175,24 +176,26 @@ export function PhraseManager({
       if (!onGuestChange) return
 
       onGuestChange(phrases.filter((p) => p.id !== id))
-      setBanner("削除しました。")
       cancelEdit()
+      toast.success("削除しました。")
       return
     }
 
     // user
-    setBanner(null)
-    const res = await fetch(`/api/phrases/${id}`, { method: "DELETE" })
-    if (!res.ok) {
-      const text = await res.text()
-      setBanner(`削除に失敗しました (${res.status}): ${text}`)
-      throw new Error(text)
+    try {
+      const res = await fetch(`/api/phrases/${id}`, { method: "DELETE" })
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text)
+      }
+      // id は削除した行、editingId は編集中の行。一致するときだけ編集状態を片付ける。
+      // 別行を編集中にほかの行だけ削除した場合は編集を続けたいので cancelEdit しない。
+      if (editingId === id) cancelEdit()
+      toast.success("削除しました。")
+      refreshList()
+    } catch {
+      toast.error("削除に失敗しました。")
     }
-    setBanner("削除しました。")
-    // id は削除した行、editingId は編集中の行。一致するときだけ編集状態を片付ける。
-    // 別行を編集中にほかの行だけ削除した場合は編集を続けたいので cancelEdit しない。
-    if (editingId === id) cancelEdit()
-    refreshList()
   }
 
   async function handleCopy(phrase: PhraseRead) {
@@ -201,13 +204,13 @@ export function PhraseManager({
       showCopied(phrase.id)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      window.alert(`コピーに失敗しました: ${message}`)
+      toast.error(`コピーに失敗しました: ${message}`)
     }
   }
 
   async function handleCopyAll() {
     if (phrases.length === 0) {
-      window.alert("コピーするフレーズがありません")
+      toast.error("コピーするフレーズがありません")
       return
     }
     const text = joinPhrasesForCopyAll(phrases)
@@ -217,18 +220,12 @@ export function PhraseManager({
       showCopied("all")
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      setBanner(`コピーに失敗しました: ${message}`)
+      toast.error(`コピーに失敗しました: ${message}`)
     }
   }
 
   return (
     <div className={cn("flex flex-col gap-6", isPending && "opacity-70")}>
-      {banner ? (
-        <p className="text-sm text-muted-foreground" role="status">
-          {banner}
-        </p>
-      ) : null}
-
       {displayPhrases.length === 0 ? (
         <p className="text-sm text-muted-foreground">フレーズがありません。</p>
       ) : (
@@ -236,11 +233,21 @@ export function PhraseManager({
           {phrases.length > 0 ? (
             <Button
               type="button"
-              variant="outline"
+              variant="secondary"
               disabled={isCopied("all")}
               onClick={() => void handleCopyAll()}
             >
-              {isCopied("all") ? "Copied!" : "Copy All"}
+              {isCopied("all") ? (
+                <>
+                  <Check aria-hidden="true" />
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <Copy aria-hidden="true" />
+                  Copy All
+                </>
+              )}
             </Button>
           ) : null}
           <TooltipProvider>
@@ -252,9 +259,9 @@ export function PhraseManager({
                       <PhraseEditCell
                         editingId={editingId}
                         content={content}
-                        banner={banner}
+                        error={editError}
                         setEditContent={setEditContent}
-                        setBanner={setBanner}
+                        setError={setEditError}
                         cancelEdit={cancelEdit}
                         handleSaveEdit={handleSaveEdit}
                       />

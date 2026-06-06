@@ -24,7 +24,7 @@ export default function VerifyPage() {
         setVerifyError("リンクが無効、または有効期限切れです。")
         return
       }
-      router.replace("/")
+      router.replace("/?toast=login")
       router.refresh()
     }
 

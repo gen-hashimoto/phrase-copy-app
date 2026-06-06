@@ -7,7 +7,7 @@ export function LogoutButton() {
 
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" })
-    router.replace("/")
+    router.replace("/?toast=logout")
     router.refresh()
   }
 

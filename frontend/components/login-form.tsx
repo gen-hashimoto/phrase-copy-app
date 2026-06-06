@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ConfirmAccountCreationAlertDialog } from "@/components/confirm-account-creation-alert-dialog"
+import { toast } from "sonner"
 
 type MagicLinkResponse = {
   ok?: boolean
@@ -83,7 +84,7 @@ export function LoginForm() {
 
       // Success covers both existing users and confirmed new account creation.
       setPendingEmail(null)
-      setMessage("Magic Link を送信しました。")
+      toast.success("Magic Link を送信しました。")
       if (typeof data.dev_link === "string") {
         setDevLink(data.dev_link)
       }

@@ -7,9 +7,9 @@ import { cn } from "@/lib/utils"
 type Props = {
   editingId: string | null
   content: string
-  banner: string | null
+  error: string | null
   setEditContent: (value: string) => void
-  setBanner: (value: string | null) => void
+  setError: (value: string | null) => void
   cancelEdit: () => void
   handleSaveEdit: (value: string) => Promise<void> | void
 }
@@ -17,9 +17,9 @@ type Props = {
 export function PhraseEditCell({
   editingId,
   content,
-  banner,
+  error,
   setEditContent,
-  setBanner,
+  setError,
   cancelEdit,
   handleSaveEdit,
 }: Props) {
@@ -44,36 +44,44 @@ export function PhraseEditCell({
     input.setSelectionRange(end, end)
   }, [editingId])
   return (
-    <Input
-      ref={editInputRef}
-      className={cn(
-        "h-8 rounded-md text-sm",
-        banner != null && "border-destructive"
-      )}
-      value={content}
-      onChange={(e) => {
-        setEditContent(e.target.value)
-        setBanner(null)
-      }}
-      aria-label="フレーズを編集"
-      aria-invalid={banner != null}
-      onKeyDown={(e) => {
-        if (e.key === "Escape") {
-          // Escape is an app shortcut, so prevent the browser default first.
-          e.preventDefault()
-          cancelEdit()
-          return
-        }
+    <>
+      <Input
+        ref={editInputRef}
+        className={cn(
+          "h-8 rounded-md text-sm",
+          error != null && "border-destructive"
+        )}
+        value={content}
+        onChange={(e) => {
+          setEditContent(e.target.value)
+          setError(null)
+        }}
+        aria-label="フレーズを編集"
+        aria-invalid={error != null}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            // Escape is an app shortcut, so prevent the browser default first.
+            e.preventDefault()
+            cancelEdit()
+            return
+          }
 
-        // Ignore shortcut handling while the user is confirming IME conversion.
-        if (isImeComposing(e)) return
+          // Ignore shortcut handling while the user is confirming IME conversion.
+          if (isImeComposing(e)) return
 
-        if (e.key === "Enter" && !e.shiftKey) {
-          // Plain Enter saves.
-          e.preventDefault()
-          handleSaveEdit(content)
-        }
-      }}
-    />
+          if (e.key === "Enter" && !e.shiftKey) {
+            // Plain Enter saves.
+            e.preventDefault()
+            handleSaveEdit(content)
+          }
+        }}
+      />
+
+      {error ? (
+        <p className="text-sm text-destructive" role="status">
+          {error}
+        </p>
+      ) : null}
+    </>
   )
 }

@@ -1,7 +1,7 @@
 "use client"
 /** action buttons while a row is in view mode */
 
-import { Copy, Check } from "lucide-react"
+import { Copy, Check, Trash2 } from "lucide-react"
 import { IconActionButton } from "@/components/phrase-actions/icon-action-button"
 import { DeletePhraseAlertDialog } from "@/components/phrase-actions/delete-phrase-alert-dialog"
 
@@ -30,7 +30,13 @@ export function PhraseRowActions({
       <DeletePhraseAlertDialog
         phrasePreview={phrasePreview}
         onDelete={onDelete}
-      />
+      >
+        <IconActionButton
+          label="Delete phrase"
+          icon={Trash2}
+          variant="destructive"
+        />
+      </DeletePhraseAlertDialog>
     </div>
   )
 }
