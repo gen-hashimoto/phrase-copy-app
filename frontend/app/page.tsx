@@ -1,32 +1,10 @@
-import { cookies } from "next/headers"
-
-import { HeaderTheme } from "@/components/header-theme"
+import { AppShellServer } from "@/components/app-shell-server"
 import { GuestPhraseList } from "@/components/guest-phrase-list"
 import { UserPhraseList } from "@/components/user-phrase-list"
 import { serverAppOrigin } from "@/lib/server-app-origin"
+import { cookieHeaderFromRequest } from "@/lib/cookie-header-from-request"
+import { fetchMe } from "@/lib/fetch-me"
 import type { PhraseRead } from "@/types/phrase"
-import type { User } from "@/types/user"
-
-async function cookieHeaderFromRequest(): Promise<string> {
-  return cookies().then((cookieStore) => cookieStore.toString())
-}
-
-async function fetchMe(): Promise<User | null> {
-  const origin = await serverAppOrigin()
-  const cookie = await cookieHeaderFromRequest()
-  const res = await fetch(`${origin}/api/auth/me`, {
-    cache: "no-store",
-    headers: { cookie },
-  })
-
-  if (res.status === 401) return null
-  if (!res.ok) {
-    throw new Error(`GET /api/auth/me failed (${res.status} ${res.statusText})`)
-  }
-
-  const data = await res.json()
-  return data.user
-}
 
 async function fetchPhrases(): Promise<PhraseRead[]> {
   const origin = await serverAppOrigin()
@@ -42,14 +20,14 @@ async function fetchPhrases(): Promise<PhraseRead[]> {
 }
 
 export default async function Page() {
-  // before login
   const me = await fetchMe()
+
+  // before login
   if (me === null) {
     return (
-      <main className="flex min-h-svh flex-col gap-4 p-6">
-        <HeaderTheme userEmail={null} />
+      <AppShellServer user={null} showLoginButton={true}>
         <GuestPhraseList />
-      </main>
+      </AppShellServer>
     )
   }
 
@@ -60,19 +38,17 @@ export default async function Page() {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     return (
-      <main className="flex min-h-svh flex-col gap-4 p-6">
-        <HeaderTheme userEmail={me.email} />
+      <AppShellServer user={me} showLoginButton={true}>
         <p className="text-sm text-destructive">
           フレーズ一覧の取得に失敗しました: {message}
         </p>
-      </main>
+      </AppShellServer>
     )
   }
 
   return (
-    <main className="flex min-h-svh flex-col gap-4 p-6">
-      <HeaderTheme userEmail={me.email} />
+    <AppShellServer user={me} showLoginButton={true}>
       <UserPhraseList phrases={phrases} />
-    </main>
+    </AppShellServer>
   )
 }
