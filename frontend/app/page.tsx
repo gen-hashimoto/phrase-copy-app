@@ -1,8 +1,7 @@
-import Link from "next/link"
 import { cookies } from "next/headers"
 
+import { HeaderTheme } from "@/components/header-theme"
 import { GuestPhraseList } from "@/components/guest-phrase-list"
-import { LogoutButton } from "@/components/logout-button"
 import { UserPhraseList } from "@/components/user-phrase-list"
 import { serverAppOrigin } from "@/lib/server-app-origin"
 import type { PhraseRead } from "@/types/phrase"
@@ -48,14 +47,7 @@ export default async function Page() {
   if (me === null) {
     return (
       <main className="flex min-h-svh flex-col gap-4 p-6">
-        <header className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-medium">Phrases</h1>
-          </div>
-          <Link className="rounded-md border px-3 py-2" href="/login">
-            Login
-          </Link>
-        </header>
+        <HeaderTheme userEmail={null} />
         <GuestPhraseList />
       </main>
     )
@@ -69,13 +61,7 @@ export default async function Page() {
     const message = err instanceof Error ? err.message : String(err)
     return (
       <main className="flex min-h-svh flex-col gap-4 p-6">
-        <header className="flex items-center justify-between gap-4">
-          <div>
-            <h1 className="text-lg font-medium">Phrases</h1>
-            <p className="text-sm text-muted-foreground">{me.email}</p>
-          </div>
-          <LogoutButton />
-        </header>
+        <HeaderTheme userEmail={me.email} />
         <p className="text-sm text-destructive">
           フレーズ一覧の取得に失敗しました: {message}
         </p>
@@ -85,15 +71,7 @@ export default async function Page() {
 
   return (
     <main className="flex min-h-svh flex-col gap-4 p-6">
-      <header className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-lg font-medium">Phrases</h1>
-          <p className="text-sm text-muted-foreground">
-            {me.email} / {phrases.length} 件
-          </p>
-        </div>
-        <LogoutButton />
-      </header>
+      <HeaderTheme userEmail={me.email} />
       <UserPhraseList phrases={phrases} />
     </main>
   )

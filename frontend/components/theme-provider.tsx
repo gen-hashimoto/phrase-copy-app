@@ -13,6 +13,7 @@ function ThemeProvider({
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
+      storageKey="phrases-theme"
       {...props}
     >
       <ThemeHotkey />
