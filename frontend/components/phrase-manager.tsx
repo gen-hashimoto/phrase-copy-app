@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useCallback, useState, useTransition } from "react"
+import { useCallback, useState, useTransition, useEffect } from "react"
 
 import type { PhraseRead } from "@/types/phrase"
 import { Button } from "@/components/ui/button"
@@ -27,6 +27,7 @@ type PhraseManagerProps = {
   phrases: PhraseRead[]
   mode: "guest" | "user"
   onGuestChange?: (phrases: PhraseRead[]) => void
+  onGuestEditInProgressChange?: (value: boolean) => void
   limit?: number
 }
 
@@ -34,6 +35,7 @@ export function PhraseManager({
   phrases,
   mode,
   onGuestChange,
+  onGuestEditInProgressChange,
   limit,
 }: PhraseManagerProps) {
   const router = useRouter()
@@ -48,6 +50,15 @@ export function PhraseManager({
   const { showCopied, isCopied } = useCopiedFeedback()
 
   const isAtLimit = mode === "guest" && limit != null && phrases.length >= limit
+
+  useEffect(() => {
+    if (mode != "guest") return
+    onGuestEditInProgressChange?.(editingId !== null)
+
+    return () => {
+      onGuestEditInProgressChange?.(false)
+    }
+  }, [mode, editingId, onGuestEditInProgressChange])
 
   function refreshList() {
     startTransition(() => {
