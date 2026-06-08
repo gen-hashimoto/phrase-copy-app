@@ -1,14 +1,14 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 
-import type { PhraseRead } from "@/types/phrase"
 import { PhraseManager } from "@/components/phrase-manager"
+import type { PhraseRead } from "@/types/phrase"
 
 import {
   GuestNoticeBanner,
   type GuestNoticeKind,
-} from "@/components/guest-notice-banner"
+} from "./guest-notice-banner-snippet"
 
 const GUEST_LIMIT = 10
 
@@ -22,6 +22,7 @@ function getGuestNoticeKinds(phraseCount: number): GuestNoticeKind[] {
   if (phraseCount >= GUEST_LIMIT) {
     notices.push("guest-limit-reached")
   }
+
   return notices
 }
 
@@ -39,33 +40,28 @@ export function GuestPhraseList() {
     function handleBeforeUnload(event: BeforeUnloadEvent) {
       // Modern browsers require preventDefault to trigger the confirmation UI.
       event.preventDefault()
-      // Some browsers still require returnValue for compatibility
-      // Deprecated in the DOM types, but still needed by some browsers for beforeunload.
+      // Some browsers still require returnValue for compatibility.
       event.returnValue = ""
     }
 
     window.addEventListener("beforeunload", handleBeforeUnload)
 
     return () => {
-      // Always clean up the listener when the warning is no longer needed.
       window.removeEventListener("beforeunload", handleBeforeUnload)
     }
   }, [hasUnsavedGuestPhrases])
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="grid gap-4">
       <GuestNoticeBanner notices={guestNotices} />
       <PhraseManager
+        limit={GUEST_LIMIT}
         mode="guest"
-        phrases={phrases}
         onGuestChange={setPhrases}
         onGuestEditInProgressChange={setHasGuestEditInProgress}
-        limit={GUEST_LIMIT}
+        phrases={phrases}
       />
-      {/* Investigation note: usage display owned by GuestPhraseList. */}
-      {/* <p className="text-sm text-muted-foreground"> */}
-      {/*   {phrases.length} / {GUEST_LIMIT} used */}
-      {/* </p> */}
     </div>
   )
 }
+
