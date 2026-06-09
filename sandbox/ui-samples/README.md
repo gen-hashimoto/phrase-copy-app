@@ -14,6 +14,8 @@ PhrasesプロジェクトのUI改善を段階的に検討するためのsandbox�
 | Phase4-1 | `dialog/phase-4-1-magic-link-account` | 初回マジックリンク要求時のアカウント作成確認を設計する |
 | Phase5 | `toast` | 操作成功・認証状態の通知方針を決め、sonnerとshadcn/ui toastを比較する |
 | Phase6 | `layout` | Header / Footer、ログイン前後表示、Server/Client責務を整理する |
+| Release Phase1 | `guest-notice-banner` | 未ログインユーザー向け通知UIをAlertで実装し、GuestPhraseListへの統合手順を整理する |
+| Release Phase2 | `phrase-action-bar` | 全コピー・追加・件数表示をSticky Action Barにまとめる |
 
 ## 実装順序
 
@@ -48,6 +50,7 @@ PhrasesプロジェクトのUI改善を段階的に検討するためのsandbox�
 
 ```bash
 cd frontend
+npx shadcn@latest add alert
 npx shadcn@latest add tooltip
 npx shadcn@latest add alert-dialog
 npx shadcn@latest add dropdown-menu

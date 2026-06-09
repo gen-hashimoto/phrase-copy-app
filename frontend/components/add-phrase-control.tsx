@@ -1,26 +1,23 @@
 "use client"
 
 import { Button } from "./ui/button"
-import { isDraftPhraseId } from "@/lib/draft-phrase"
-import type { PhraseRead } from "@/types/phrase"
+import { Plus } from "lucide-react"
 
 type Props = {
-  phrases: PhraseRead[]
-  disabled?: boolean
-  onStartDraft: () => void
+  disabled: boolean
+  onAdd: () => void
 }
-export function AddPhraseControl({ phrases, disabled, onStartDraft }: Props) {
-  const hasDraft = phrases.some((p) => isDraftPhraseId(p.id))
+export function AddPhraseControl({ disabled, onAdd }: Props) {
   return (
     <Button
       type="button"
       variant="outline"
       size="icon"
       aria-label="フレーズを追加"
-      disabled={disabled || hasDraft}
-      onClick={onStartDraft}
+      disabled={disabled}
+      onClick={onAdd}
     >
-      +
+      <Plus aria-hidden="true" className="h-4 w-4" />
     </Button>
   )
 }
