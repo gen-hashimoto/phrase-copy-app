@@ -1,6 +1,7 @@
 "use client"
 
-import { useRef, useEffect, RefObject } from "react"
+import { useEffect, useRef, type RefObject } from "react"
+
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
 
@@ -44,7 +45,6 @@ export function PhraseEditCell({
 
     input.focus({ preventScroll: true })
 
-    // Put the caret at the end so the user can keep typing immediately.
     const end = input.value.length
     input.setSelectionRange(end, end)
   }, [autoFocusOnEdit, editingId, editInputRef])
@@ -52,35 +52,32 @@ export function PhraseEditCell({
   return (
     <div className="grid w-full min-w-0 gap-1">
       <Input
-        ref={editInputRef}
+        aria-invalid={error != null}
+        aria-label="フレーズを編集"
         className={cn(
           "h-8 rounded-md text-sm",
-          error != null && "border-destructive"
+          error != null && "border-destructive",
         )}
-        value={content}
         onChange={(e) => {
           setEditContent(e.target.value)
           setError(null)
         }}
-        aria-label="フレーズを編集"
-        aria-invalid={error != null}
         onKeyDown={(e) => {
           if (e.key === "Escape") {
-            // Escape is an app shortcut, so prevent the browser default first.
             e.preventDefault()
             cancelEdit()
             return
           }
 
-          // Ignore shortcut handling while the user is confirming IME conversion.
           if (isImeComposing(e)) return
 
           if (e.key === "Enter" && !e.shiftKey) {
-            // Plain Enter saves.
             e.preventDefault()
             handleSaveEdit(content)
           }
         }}
+        ref={editInputRef}
+        value={content}
       />
 
       {error ? (
@@ -91,3 +88,4 @@ export function PhraseEditCell({
     </div>
   )
 }
+

@@ -16,6 +16,7 @@ PhrasesプロジェクトのUI改善を段階的に検討するためのsandbox�
 | Phase6 | `layout` | Header / Footer、ログイン前後表示、Server/Client責務を整理する |
 | Release Phase1 | `guest-notice-banner` | 未ログインユーザー向け通知UIをAlertで実装し、GuestPhraseListへの統合手順を整理する |
 | Release Phase2 | `phrase-action-bar` | 全コピー・追加・件数表示をSticky Action Barにまとめる |
+| Release Phase3 | `draft-scroll-focus` | 追加ボタン押下後に末尾ドラフトへスクロールし、編集欄へフォーカスする |
 
 ## 実装順序
 

@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useCallback, useState, useTransition, useEffect } from "react"
+import { useCallback, useState, useTransition, useEffect, useRef } from "react"
 
 import type { PhraseRead } from "@/types/phrase"
 import { PhraseList } from "@/components/phrase-list/phrase-list"
@@ -42,6 +42,10 @@ export function PhraseManager({
   const [draftRow, setDraftRow] = useState<PhraseRead | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [content, setEditContent] = useState("")
+
+  const draftRowRef = useRef<HTMLDivElement | null>(null)
+  const draftInputRef = useRef<HTMLInputElement | null>(null)
+  const shouldFocusDraftRef = useRef(false)
 
   const displayPhrases = draftRow != null ? [...phrases, draftRow] : phrases
 
@@ -110,6 +114,7 @@ export function PhraseManager({
   }, [])
 
   function startDraft() {
+    shouldFocusDraftRef.current = true
     setDraftRow(createDraftPhraseRow())
     setEditingId(DRAFT_PHRASE_ID)
     setEditContent("")
@@ -124,6 +129,28 @@ export function PhraseManager({
       setEditContent("")
     }
   }
+
+  useEffect(() => {
+    if (!shouldFocusDraftRef.current) return
+    if (editingId !== DRAFT_PHRASE_ID) return
+    if (draftRow === null) return
+
+    shouldFocusDraftRef.current = false
+
+    requestAnimationFrame(() => {
+      const input = draftInputRef.current
+
+      if (input !== null) {
+        input.focus({ preventScroll: true })
+        input.setSelectionRange(input.value.length, input.value.length)
+      }
+
+      draftRowRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      })
+    })
+  }, [draftRow, editingId])
 
   function clearDraft() {
     setDraftRow(null)
@@ -248,60 +275,69 @@ export function PhraseManager({
         onAdd={startDraft}
       />
       {displayPhrases.length === 0 ? (
-        <p className="text-sm text-muted-foreground">フレーズがありません。</p>
+        <p className="text-sm text-muted-foreground">No items</p>
       ) : (
         <>
           <TooltipProvider>
             <PhraseList>
-              {displayPhrases.map((p) =>
-                editingId === p.id ? (
-                  <PhraseCard key={p.id}>
-                    <div className="w-full min-w-0 flex-1">
-                      <PhraseEditCell
-                        editingId={editingId}
-                        content={content}
-                        error={editError}
-                        setEditContent={setEditContent}
-                        setError={setEditError}
-                        cancelEdit={cancelEdit}
-                        handleSaveEdit={handleSaveEdit}
-                      />
-                    </div>
-                    <div className="shrink-0">
-                      <PhraseEditActions
-                        onOk={() => void handleSaveEdit(content)}
-                        disabledOk={false}
-                        onCancel={cancelEdit}
-                        disabledCancel={false}
-                      />
-                    </div>
-                  </PhraseCard>
-                ) : (
-                  <PhraseCard
-                    key={p.id}
-                    className={cn(
-                      (isCopied(p.id) || isCopied("all")) &&
-                        "bg-primary/10 transition-colors"
+              {displayPhrases.map((p) => {
+                const isDraft = p.id === DRAFT_PHRASE_ID
+                const isEditing = editingId === p.id
+
+                return (
+                  <div key={p.id} ref={isDraft ? draftRowRef : undefined}>
+                    {isEditing ? (
+                      <PhraseCard key={p.id}>
+                        <div className="w-full min-w-0 flex-1">
+                          <PhraseEditCell
+                            editingId={editingId}
+                            content={content}
+                            error={editError}
+                            autoFocusOnEdit={!isDraft}
+                            inputRef={isDraft ? draftInputRef : undefined}
+                            setEditContent={setEditContent}
+                            setError={setEditError}
+                            cancelEdit={cancelEdit}
+                            handleSaveEdit={handleSaveEdit}
+                          />
+                        </div>
+                        <div className="shrink-0">
+                          <PhraseEditActions
+                            onOk={() => void handleSaveEdit(content)}
+                            disabledOk={false}
+                            onCancel={cancelEdit}
+                            disabledCancel={false}
+                          />
+                        </div>
+                      </PhraseCard>
+                    ) : (
+                      <PhraseCard
+                        key={p.id}
+                        className={cn(
+                          (isCopied(p.id) || isCopied("all")) &&
+                            "bg-primary/10 transition-colors"
+                        )}
+                      >
+                        <div className="w-full min-w-0 flex-1">
+                          <PhraseContentCell
+                            phrase={p}
+                            isCopied={isCopied(p.id) || isCopied("all")}
+                            onStartEdit={startEdit}
+                          />
+                        </div>
+                        <div className="shrink-0">
+                          <PhraseRowActions
+                            onCopy={() => void handleCopy(p)}
+                            disabledCopy={isCopied(p.id)}
+                            onDelete={() => handleDelete(p.id)}
+                            phrasePreview={p.content}
+                          />
+                        </div>
+                      </PhraseCard>
                     )}
-                  >
-                    <div className="w-full min-w-0 flex-1">
-                      <PhraseContentCell
-                        phrase={p}
-                        isCopied={isCopied(p.id) || isCopied("all")}
-                        onStartEdit={startEdit}
-                      />
-                    </div>
-                    <div className="shrink-0">
-                      <PhraseRowActions
-                        onCopy={() => void handleCopy(p)}
-                        disabledCopy={isCopied(p.id)}
-                        onDelete={() => handleDelete(p.id)}
-                        phrasePreview={p.content}
-                      />
-                    </div>
-                  </PhraseCard>
+                  </div>
                 )
-              )}
+              })}
             </PhraseList>
           </TooltipProvider>
         </>
