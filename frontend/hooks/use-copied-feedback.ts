@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 
-const DEFAULT_MS = 1000
+const DEFAULT_MS = 400
 
 /**
  * Shows brief  "Copied!" feedback after a successful copy.
