@@ -17,6 +17,7 @@ PhrasesプロジェクトのUI改善を段階的に検討するためのsandbox�
 | Release Phase1 | `guest-notice-banner` | 未ログインユーザー向け通知UIをAlertで実装し、GuestPhraseListへの統合手順を整理する |
 | Release Phase2 | `phrase-action-bar` | 全コピー・追加・件数表示をSticky Action Barにまとめる |
 | Release Phase3 | `draft-scroll-focus` | 追加ボタン押下後に末尾ドラフトへスクロールし、編集欄へフォーカスする |
+| Release Phase4 | `small-release-polish` | ボタンサイズ、モバイルTooltip、コピー発光時間、components分割方針を整理する |
 
 ## 実装順序
 
