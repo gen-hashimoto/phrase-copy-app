@@ -120,9 +120,15 @@ export function LoginForm() {
           初めて利用するメールアドレスの場合、確認後にアカウントが作成されます。
         </p>
 
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? "Sending..." : "Send Magic Link"}
-        </Button>
+        <div className="flex sm:justify-end">
+          <Button
+            className="w-full sm:w-auto"
+            type="submit"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? "Sending..." : "Send Magic Link"}
+          </Button>
+        </div>
 
         {message ? (
           <p className="text-sm text-muted-foreground">{message}</p>

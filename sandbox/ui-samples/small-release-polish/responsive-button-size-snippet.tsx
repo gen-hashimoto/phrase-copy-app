@@ -35,7 +35,7 @@ export function MagicLinkSubmitButton({
 }: MagicLinkSubmitButtonProps) {
   return (
     <Button
-      className="h-11 px-4 sm:h-8 sm:px-3"
+      className="w-full sm:w-auto"
       disabled={isSubmitting}
       size="sm"
       type="submit"
@@ -75,7 +75,9 @@ export function LoginFormButtonSizeSample({
         />
       </label>
 
-      <MagicLinkSubmitButton isSubmitting={isSubmitting} />
+      <div className="flex sm:justify-start">
+        <MagicLinkSubmitButton isSubmitting={isSubmitting} />
+      </div>
     </form>
   )
 }

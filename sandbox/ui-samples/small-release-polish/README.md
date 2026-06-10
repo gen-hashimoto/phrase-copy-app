@@ -24,17 +24,17 @@
 
 方針:
 
-- Mobile はタップしやすい高さを維持する
-- Desktop は `sm:` 以降で高さを抑える
-- shadcn/ui `Button` の `size` だけでは breakpoint ごとの切り替えが難しいため、`className` で高さと padding を調整する
+- Add Phrase は Mobile でタップしやすいサイズを維持し、Desktop では高さを抑える
+- Send Magic Link は Mobile で画面幅いっぱい、Desktop では画面いっぱいにしない
+- shadcn/ui `Button` の `size` だけでは breakpoint ごとの切り替えが難しいため、`className` で調整する
 
-例:
+Send Magic Link:
 
 ```tsx
-className="h-11 px-4 sm:h-8 sm:px-3"
+className="w-full sm:w-auto"
 ```
 
-icon button の場合:
+Add Phrase:
 
 ```tsx
 className="size-11 sm:size-8"
