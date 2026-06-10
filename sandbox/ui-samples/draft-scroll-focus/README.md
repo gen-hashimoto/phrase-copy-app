@@ -67,6 +67,51 @@ draftRowRef.current?.scrollIntoView({ behavior: "smooth", block: "end" })
 
 `focus({ preventScroll: true })` を先に呼ぶことで、フォーカスによる即スクロールを抑えます。そのうえで `scrollIntoView({ behavior: "smooth" })` を呼ぶと、末尾までアニメーションで移動できます。
 
+## 空ドラフトのまま他行を編集した時の注意
+
+既存の流れでは、他のフレーズをダブルクリックすると `startEdit()` が動き、`editingId` だけが別のフレーズIDへ切り替わります。
+
+この時、空の新規ドラフトは `phrases` には保存されていません。ただし `draftRow` state には残っているため、編集状態だけ外れて、画面上は空の行が確定したように見えます。
+
+バリデーションが効かない理由は、バリデーションが `handleSaveEdit()` の中だけで実行されるためです。ダブルクリックによる編集対象の切り替えは保存処理ではないので、`validatePhraseContent()` を通りません。
+
+この Phase では、ドラフト編集中に他行を編集しようとした場合、入力状態によって分けます。
+
+- 空ドラフト: 先に空ドラフトを破棄してから編集対象を切り替える
+- 入力済みドラフト: 切り替えを止めて、保存またはキャンセルを促す
+
+```tsx
+if (editingId === DRAFT_PHRASE_ID) {
+  if (content.trim().length === 0) {
+    setDraftRow(null)
+  } else {
+    setEditError("新規フレーズを保存またはキャンセルしてください。")
+    draftInputRef.current?.focus({ preventScroll: true })
+    return
+  }
+}
+```
+
+入力済みドラフトを自動保存しない理由は、他行のダブルクリックが保存操作ではないためです。暗黙保存にすると、ユーザーがまだ入力途中の内容まで確定してしまう可能性があります。
+
+本番反映時に `startEdit` を `useCallback` で包む場合は、依存配列に注意します。
+
+```tsx
+const startEdit = useCallback((phrase: PhraseRead) => {
+  if (editingId === DRAFT_PHRASE_ID && content.trim().length === 0) {
+    setDraftRow(null)
+  }
+
+  setEditingId(phrase.id)
+  setEditContent(phrase.content)
+  setEditError(null)
+}, [editingId, content])
+```
+
+`useCallback(..., [])` にすると、初回レンダー時の `editingId` と `content` を見続けます。そのため、画面上ではドラフト編集中でも、コールバック内では `editingId === null` のままになり、空ドラフト破棄の条件が通りません。
+
+確認ダイアログを出したい場合は、この `return` の前に `AlertDialog` を挟み、「保存せず破棄して切り替える」操作だけ明示的に許可します。
+
 ## Phase 2 との関係
 
 Phase 2 の `PhraseActionBar` から `onAdd={startDraft}` を呼ぶ構成のままで使えます。

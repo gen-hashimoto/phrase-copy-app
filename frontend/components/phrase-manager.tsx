@@ -107,11 +107,27 @@ export function PhraseManager({
     refreshList()
   }
 
-  const startEdit = useCallback((p: PhraseRead) => {
-    setEditingId(p.id)
-    setEditContent(p.content)
-    setEditError(null)
-  }, [])
+  const startEdit = useCallback(
+    (p: PhraseRead) => {
+      if (editingId === DRAFT_PHRASE_ID) {
+        if (content.trim().length === 0) {
+          setDraftRow(null)
+        } else {
+          setEditError("新規フレーズを保存またはキャンセルしてください。")
+          draftInputRef.current?.focus({ preventScroll: true })
+          draftRowRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+          })
+          return
+        }
+      }
+      setEditingId(p.id)
+      setEditContent(p.content)
+      setEditError(null)
+    },
+    [content, editingId]
+  )
 
   function startDraft() {
     shouldFocusDraftRef.current = true

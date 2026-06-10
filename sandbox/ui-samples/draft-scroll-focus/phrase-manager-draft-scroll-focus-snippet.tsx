@@ -51,6 +51,22 @@ export function PhraseManagerDraftFocusSample({
     setEditContent("")
   }
 
+  function startEditFromContentCell(phrase: PhraseRead) {
+    if (editingId === DRAFT_PHRASE_ID) {
+      if (content.trim().length === 0) {
+        setDraftRow(null)
+      } else {
+        setEditError("新規フレーズを保存またはキャンセルしてください。")
+        draftInputRef.current?.focus({ preventScroll: true })
+        return
+      }
+    }
+
+    setEditingId(phrase.id)
+    setEditContent(phrase.content)
+    setEditError(null)
+  }
+
   useEffect(() => {
     if (!shouldFocusDraftRef.current) return
     if (editingId !== DRAFT_PHRASE_ID) return
@@ -114,11 +130,7 @@ export function PhraseManagerDraftFocusSample({
                   ) : (
                     <PhraseContentCell
                       isCopied={false}
-                      onStartEdit={() => {
-                        setEditingId(phrase.id)
-                        setEditContent(phrase.content)
-                        setEditError(null)
-                      }}
+                      onStartEdit={startEditFromContentCell}
                       phrase={phrase}
                     />
                   )}
