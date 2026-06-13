@@ -58,11 +58,24 @@ Mobile / touch device では Tooltip で包まず、`aria-label` 付きの icon 
 
 現在の `useCopiedFeedback` はデフォルト `1000ms` です。発光が長く感じる場合は `600ms` 程度にします。
 
+消える時に急に切れないように、`transition-colors` はコピー中だけでなく常に付けます。
+
 推奨:
 
 ```tsx
 const { showCopied, isCopied } = useCopiedFeedback(600)
 ```
+
+カード側:
+
+```tsx
+className={cn(
+  "transition-colors duration-300 ease-out motion-reduce:transition-none",
+  (isCopied(p.id) || isCopied("all")) ? "bg-primary/10" : "bg-card",
+)}
+```
+
+発光している時間は `600ms`、消えるアニメーションは `300ms` 程度にすると、短くても急に消えない見え方になります。
 
 全体で統一したい場合は hook のデフォルト値を `600` に変更します。画面ごとに調整したい場合は、呼び出し側で duration を渡します。
 

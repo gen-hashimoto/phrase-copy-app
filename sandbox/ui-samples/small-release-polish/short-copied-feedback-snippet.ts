@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react"
 
 const DEFAULT_COPIED_FEEDBACK_MS = 600
+const COPIED_HIGHLIGHT_CLASS =
+  "transition-colors duration-300 ease-out motion-reduce:transition-none"
 
 /**
  * Shows brief "Copied!" feedback after a successful copy.
@@ -47,5 +49,19 @@ export function PhraseManagerCopiedFeedbackSample() {
     showCopied,
     isCopied,
   }
+}
+
+export function getCopiedHighlightClass(isCopied: boolean) {
+  return `${COPIED_HIGHLIGHT_CLASS} ${isCopied ? "bg-primary/10" : "bg-card"}`
+}
+
+export function getPhraseCardClassName({
+  isPhraseCopied,
+  isCopyAllCopied,
+}: {
+  isPhraseCopied: boolean
+  isCopyAllCopied: boolean
+}) {
+  return getCopiedHighlightClass(isPhraseCopied || isCopyAllCopied)
 }
 
