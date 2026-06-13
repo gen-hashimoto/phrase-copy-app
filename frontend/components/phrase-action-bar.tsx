@@ -24,7 +24,7 @@ function formatPhraseCount({
   limit?: number
   mode: "guest" | "user"
 }) {
-  if (mode === "guest" && limit != null) {
+  if (limit != null) {
     return `${phraseCount} / ${limit} used`
   }
 
