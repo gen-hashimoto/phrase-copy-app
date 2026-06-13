@@ -5,7 +5,6 @@ import { type ReactNode } from "react"
 import {
   Table,
   TableBody,
-  TableCaption,
   TableHead,
   TableHeader,
   TableRow,
@@ -18,7 +17,6 @@ export function PhraseTableShell({ children }: { children: ReactNode }) {
         <col style={{ width: "auto" }} />
         <col style={{ width: "5rem" }} />
       </colgroup>
-      <TableCaption>フレーズ一覧</TableCaption>
       <TableHeader>
         <TableRow>
           <TableHead>内容</TableHead>

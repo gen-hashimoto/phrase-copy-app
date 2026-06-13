@@ -7,6 +7,7 @@
 ## サンプル
 
 - `responsive-layout-samples.tsx`
+- `phase-3-1-card-only/README.md`
 
 含まれる案:
 
@@ -14,7 +15,20 @@
 - 案B: DesktopはTable、Mobileは横スクロールTable
 - 案C: Desktop/MobileともCard
 
-## 比較表
+## Phase3-1での方針変更
+
+Phase3の比較時点では案Aを最推奨にしていましたが、現在の新しい推奨は `phase-3-1-card-only/` の **Card Only Responsive Layout** です。
+
+新方針では、Desktop Table / Mobile Card の2系統を持たず、Cardコンポーネント1種類だけを採用します。`sm` 以上ではCard内部を横並びにしてTable風に見せ、Mobileでは同じCardを縦積みにします。
+
+理由:
+
+- 保守対象を1つにできる。
+- 将来のドラッグ&ドロップ並び替えで、Card 1件をSortable Itemとして扱いやすい。
+- Phraseは表形式で比較するデータよりも、文章を読んで選ぶデータに近い。
+- `sm` 以上では `flex` や `grid` でTableライクな密度を作れる。
+
+## Phase3時点の比較表
 
 | 案 | Desktop | Mobile | 良い点 | 注意点 | 評価 |
 | --- | --- | --- | --- | --- | --- |
@@ -67,9 +81,9 @@ shadcn/ui の `Table` はコンテナに `overflow-x-auto` を持つため、横
 
 PCで件数が増えると縦に長くなり、一覧性が落ちます。業務的に大量の定型文を扱うなら、DesktopではTableの方が向いています。
 
-## 推奨案
+## Phase3時点の推奨案
 
-このプロジェクトでは案Aを推奨します。
+このプロジェクトでは、Phase3の比較時点では案Aを推奨していました。
 
 理由:
 
@@ -88,4 +102,4 @@ PCで件数が増えると縦に長くなり、一覧性が落ちます。業務
 
 ## このPhaseでの推奨
 
-最終的には案Aを採用します。ただし、最初の小さな改善として案Bの横スクロールTableだけを入れ、次の段階でMobile Cardへ移る進め方も現実的です。
+このREADMEはPhase3時点の比較資料として残します。最終的な本番反映方針は、Phase3-1の `phase-3-1-card-only/README.md` を優先します。

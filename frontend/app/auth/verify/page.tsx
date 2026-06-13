@@ -1,47 +1,31 @@
-"use client"
+import { AppShellServer } from "@/components/app-shell-server"
+import { AuthVerifyClient } from "@/components/auth-verify-client"
+import { fetchMe } from "@/lib/fetch-me"
+import { redirect } from "next/navigation"
 
-import { useRouter, useSearchParams } from "next/navigation"
-import { useEffect, useState } from "react"
+type Props = {
+  searchParams: Promise<{
+    token?: string | string[]
+  }>
+}
 
-export default function VerifyPage() {
-  const router = useRouter()
-  const searchParams = useSearchParams()
-  const token = searchParams.get("token")
+export default async function VerifyPage({ searchParams }: Props) {
+  const me = await fetchMe()
 
-  const [verifyError, setVerifyError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (!token) return
-
-    async function verify() {
-      const res = await fetch("/api/auth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token }),
-      })
-
-      if (!res.ok) {
-        setVerifyError("リンクが無効、または有効期限切れです。")
-        return
-      }
-      router.replace("/")
-      router.refresh()
-    }
-
-    void verify()
-  }, [router, token])
-
-  if (!token) {
-    return (
-      <p className="p-6 text-sm text-muted-foreground">無効なリンクです。</p>
-    )
+  if (me) {
+    redirect("/")
   }
 
-  if (verifyError) {
-    return <p className="p-6 text-sm text-muted-foreground">{verifyError}</p>
-  }
+  const params = await searchParams
+  const token = Array.isArray(params.token) ? params.token[0] : params.token
 
   return (
-    <p className="p-6 text-sm text-muted-foreground">ログイン確認中です...</p>
+    <AppShellServer user={null} showLoginButton={false}>
+      {token ? (
+        <AuthVerifyClient token={token} />
+      ) : (
+        <p className="text-sm text-muted-foreground">無効なリンクです。</p>
+      )}
+    </AppShellServer>
   )
 }

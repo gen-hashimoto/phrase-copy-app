@@ -25,15 +25,23 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 class MagicLinkRequest(BaseModel):
     email: EmailStr
+    # The frontend sends False for the first request.
+    # It sends True only after the user confirms the AlertDialog.
+    confirm_account_creation: bool = False
 
 
 class MagicLinkResponse(BaseModel):
     ok: bool
+    # Development only. Production should send the email and return None here.
     dev_link: str | None = None
 
 
 class MagicLinkVerifyRequest(BaseModel):
     token: str
+
+
+# The frontend checks this stable code instead of parsing human-readable text.
+ACCOUNT_CREATION_CONFIRMATION_REQUIRED = "ACCOUNT_CREATION_CONFIRMATION_REQUIRED"
 
 
 def ensure_utc(dt: datetime) -> datetime:
@@ -46,16 +54,35 @@ def ensure_utc(dt: datetime) -> datetime:
 def request_magic_link(body: MagicLinkRequest, db: Session = Depends(get_db)):
     email = body.email.lower()
     user = db.scalar(select(User).where(User.email == email))
+
+    # Important invariant:
+    # If this email is new, do not create a User until the user has explicitly
+    # accepted the "an account will be created" dialog.
+    if user is None and not body.confirm_account_creation:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": ACCOUNT_CREATION_CONFIRMATION_REQUIRED,
+                "message": "Account creation confirmation is required.",
+            },
+        )
+
+    # This branch runs only after confirmation for new users.
+    # Existing users skip this branch and receive a normal magic link.
     if user is None:
         user = User(email=email)
         db.add(user)
 
+    # From here on, both paths are identical:
+    # store a one-time magic link token on the user record.
     token = create_magic_link_token()
     user.magic_link_token_hash = hash_magic_link_token(token)
     user.magic_link_expires_at = magic_link_expires_at(None)
     user.magic_link_used_at = None
     user.updated_at = datetime.now(timezone.utc)
 
+    # The account creation and token update are committed together.
+    # If the commit fails, the user should not receive a usable link.
     db.commit()
 
     # Development only. Production should send email and return no token-bearing URL.
@@ -66,7 +93,7 @@ def request_magic_link(body: MagicLinkRequest, db: Session = Depends(get_db)):
 def verify_magic_link(
     body: MagicLinkVerifyRequest, response: Response, db: Session = Depends(get_db)
 ):
-    # Compare the hashed token because only the hash is stored in the databese
+    # Compare the hashed token because only the hash is stored in the database.
     token_hash = hash_magic_link_token(body.token)
     user = db.scalar(select(User).where(User.magic_link_token_hash == token_hash))
     now = datetime.now(timezone.utc)
@@ -74,8 +101,8 @@ def verify_magic_link(
     # Treat missing, expired, or already-used links as failed authentication.
     if user is None:
         raise HTTPException(status_code=401, detail="Invalid magic link")
-    exprires_at = user.magic_link_expires_at
-    if exprires_at is None or ensure_utc(exprires_at) <= now:
+    expires_at = user.magic_link_expires_at
+    if expires_at is None or ensure_utc(expires_at) <= now:
         raise HTTPException(status_code=401, detail="Magic link expired")
     if user.magic_link_used_at is not None:
         raise HTTPException(status_code=401, detail="Magic link already used")

@@ -1,9 +1,7 @@
 "use client"
 
-import { Trash2 } from "lucide-react"
 import type { MouseEvent } from "react"
-import { useState } from "react"
-import { IconActionButton } from "@/components/icon-action-button"
+import React, { useState } from "react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,9 +18,14 @@ import { cn } from "@/lib/utils"
 type Props = {
   phrasePreview: string
   onDelete: () => Promise<void>
+  children: React.ReactNode
 }
 
-export function DeletePhraseAlertDialog({ phrasePreview, onDelete }: Props) {
+export function DeletePhraseAlertDialog({
+  phrasePreview,
+  onDelete,
+  children,
+}: Props) {
   const [isOpen, setIsOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
@@ -47,18 +50,14 @@ export function DeletePhraseAlertDialog({ phrasePreview, onDelete }: Props) {
         }
       }}
     >
-      <AlertDialogTrigger asChild>
-        <IconActionButton
-          label="Delete phrase"
-          icon={Trash2}
-          variant="destructive"
-        />
-      </AlertDialogTrigger>
+      <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>このフレーズを削除しますか？</AlertDialogTitle>
           <AlertDialogDescription>
-            この操作は取り消せません。下記のフレーズは完全に削除されます。
+            この操作は取り消せません。
+            <br />
+            下記のフレーズは完全に削除されます。
           </AlertDialogDescription>
         </AlertDialogHeader>
 

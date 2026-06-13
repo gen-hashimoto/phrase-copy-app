@@ -1,18 +1,17 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useCallback, useState, useTransition, useRef, useEffect } from "react"
+import { useCallback, useState, useTransition, useEffect, useRef } from "react"
 
 import type { PhraseRead } from "@/types/phrase"
-import { Button } from "@/components/ui/button"
-import { TableCell, TableRow } from "@/components/ui/table"
-import { PhraseTableShell } from "@/components/phrase-table-shell"
+import { PhraseList } from "@/components/phrase-list/phrase-list"
+import { PhraseCard } from "@/components/phrase-list/phrase-card"
 import { PhraseContentCell } from "@/components/phrase-content-cell"
 import { PhraseEditCell } from "@/components/phrase-edit-cell"
-import { AddPhraseControl } from "@/components/add-phrase-control"
-import { PhraseEditActions } from "@/components/phrase-edit-actions"
-import { PhraseRowActions } from "@/components/phrase-row-actions"
+import { PhraseEditActions } from "@/components/phrase-actions/phrase-edit-actions"
+import { PhraseRowActions } from "@/components/phrase-actions/phrase-row-actions"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { PhraseActionBar } from "@/components/phrase-action-bar"
 import { cn } from "@/lib/utils"
 import { copyTextToClipboard } from "@/lib/copy-to-clipboard"
 import { getPhraseCopyText } from "@/lib/phrase-copy-text"
@@ -20,37 +19,69 @@ import { useCopiedFeedback } from "@/hooks/use-copied-feedback"
 import { joinPhrasesForCopyAll } from "@/lib/join-phrases-for-copy-all"
 import { createDraftPhraseRow, DRAFT_PHRASE_ID } from "@/lib/draft-phrase"
 import { validatePhraseContent } from "@/lib/validate-phrase-content"
+import { toast } from "sonner"
 
 type PhraseManagerProps = {
   phrases: PhraseRead[]
   mode: "guest" | "user"
   onGuestChange?: (phrases: PhraseRead[]) => void
+  onGuestEditInProgressChange?: (value: boolean) => void
   limit?: number
+}
+
+type ApiErrorBody = {
+  detail?: string
+  error?: string
 }
 
 export function PhraseManager({
   phrases,
   mode,
   onGuestChange,
+  onGuestEditInProgressChange,
   limit,
 }: PhraseManagerProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [banner, setBanner] = useState<string | null>(null)
+  const [editError, setEditError] = useState<string | null>(null)
   const [draftRow, setDraftRow] = useState<PhraseRead | null>(null)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [content, setEditContent] = useState("")
+
+  const draftRowRef = useRef<HTMLDivElement | null>(null)
+  const draftInputRef = useRef<HTMLInputElement | null>(null)
+  const shouldFocusDraftRef = useRef(false)
 
   const displayPhrases = draftRow != null ? [...phrases, draftRow] : phrases
 
   const { showCopied, isCopied } = useCopiedFeedback()
 
-  const isAtLimit = mode === "guest" && limit != null && phrases.length >= limit
+  const isAtLimit = limit != null && phrases.length >= limit
+  const canAdd = draftRow === null && !isAtLimit
+  const canCopyAll = phrases.length > 0
+
+  useEffect(() => {
+    if (mode != "guest") return
+    onGuestEditInProgressChange?.(editingId !== null)
+
+    return () => {
+      onGuestEditInProgressChange?.(false)
+    }
+  }, [mode, editingId, onGuestEditInProgressChange])
 
   function refreshList() {
     startTransition(() => {
       router.refresh()
     })
+  }
+
+  async function readApiError(res: Response): Promise<string> {
+    const data = (await res.json().catch(() => null)) as ApiErrorBody | null
+
+    if (data?.detail) return data.detail
+    if (data?.error) return data.error
+
+    return `作成に失敗しました (${res.status})`
   }
 
   async function handleCreate(nextContent: string) {
@@ -70,37 +101,55 @@ export function PhraseManager({
 
       onGuestChange([...phrases, nextPhrase])
       clearDraft()
-      setBanner("追加しました。")
+      toast.success("作成しました。")
       return
     }
 
     // user
-    setBanner(null)
     const res = await fetch("/api/phrases", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: nextContent }),
     })
+
     if (!res.ok) {
-      const text = await res.text()
-      setBanner(`作成に失敗しました (${res.status}): ${text}`)
+      toast.error(await readApiError(res))
       return
     }
+
     clearDraft()
-    setBanner("作成しました。")
+    toast.success("作成しました。")
     refreshList()
   }
 
-  const startEdit = useCallback((p: PhraseRead) => {
-    setEditingId(p.id)
-    setEditContent(p.content)
-    setBanner(null)
-  }, [])
+  const startEdit = useCallback(
+    (p: PhraseRead) => {
+      if (editingId === DRAFT_PHRASE_ID) {
+        if (content.trim().length === 0) {
+          setDraftRow(null)
+        } else {
+          setEditError("新規フレーズを保存またはキャンセルしてください。")
+          draftInputRef.current?.focus({ preventScroll: true })
+          draftRowRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "end",
+          })
+          return
+        }
+      }
+      setEditingId(p.id)
+      setEditContent(p.content)
+      setEditError(null)
+    },
+    [content, editingId]
+  )
 
   function startDraft() {
+    shouldFocusDraftRef.current = true
     setDraftRow(createDraftPhraseRow())
     setEditingId(DRAFT_PHRASE_ID)
     setEditContent("")
+    setEditError(null)
   }
 
   function cancelEdit() {
@@ -112,6 +161,28 @@ export function PhraseManager({
     }
   }
 
+  useEffect(() => {
+    if (!shouldFocusDraftRef.current) return
+    if (editingId !== DRAFT_PHRASE_ID) return
+    if (draftRow === null) return
+
+    shouldFocusDraftRef.current = false
+
+    requestAnimationFrame(() => {
+      const input = draftInputRef.current
+
+      if (input !== null) {
+        input.focus({ preventScroll: true })
+        input.setSelectionRange(input.value.length, input.value.length)
+      }
+
+      draftRowRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "end",
+      })
+    })
+  }, [draftRow, editingId])
+
   function clearDraft() {
     setDraftRow(null)
     setEditingId(null)
@@ -121,8 +192,7 @@ export function PhraseManager({
   async function handleSaveEdit(nextContent: string) {
     const error = validatePhraseContent(nextContent)
     if (error) {
-      setBanner(error)
-      window.alert(error)
+      setEditError(error)
       return
     }
     if (editingId === null) return
@@ -147,25 +217,25 @@ export function PhraseManager({
             : p
         )
       )
-      setBanner("更新しました。")
+      toast.success("保存しました。")
       cancelEdit()
       return
     }
 
     // user
-    setBanner(null)
     const res = await fetch(`/api/phrases/${editingId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
+      body: JSON.stringify({
+        content: nextContent,
+      }),
     })
     if (!res.ok) {
-      const text = await res.text()
-      setBanner(`更新に失敗しました (${res.status}): ${text}`)
+      toast.error("保存に失敗しました。")
       return
     }
-    setBanner("更新しました。")
     cancelEdit()
+    toast.success("保存しました。")
     refreshList()
   }
 
@@ -175,24 +245,26 @@ export function PhraseManager({
       if (!onGuestChange) return
 
       onGuestChange(phrases.filter((p) => p.id !== id))
-      setBanner("削除しました。")
       cancelEdit()
+      toast.success("削除しました。")
       return
     }
 
     // user
-    setBanner(null)
-    const res = await fetch(`/api/phrases/${id}`, { method: "DELETE" })
-    if (!res.ok) {
-      const text = await res.text()
-      setBanner(`削除に失敗しました (${res.status}): ${text}`)
-      throw new Error(text)
+    try {
+      const res = await fetch(`/api/phrases/${id}`, { method: "DELETE" })
+      if (!res.ok) {
+        const text = await res.text()
+        throw new Error(text)
+      }
+      // id は削除した行、editingId は編集中の行。一致するときだけ編集状態を片付ける。
+      // 別行を編集中にほかの行だけ削除した場合は編集を続けたいので cancelEdit しない。
+      if (editingId === id) cancelEdit()
+      toast.success("削除しました。")
+      refreshList()
+    } catch {
+      toast.error("削除に失敗しました。")
     }
-    setBanner("削除しました。")
-    // id は削除した行、editingId は編集中の行。一致するときだけ編集状態を片付ける。
-    // 別行を編集中にほかの行だけ削除した場合は編集を続けたいので cancelEdit しない。
-    if (editingId === id) cancelEdit()
-    refreshList()
   }
 
   async function handleCopy(phrase: PhraseRead) {
@@ -201,13 +273,13 @@ export function PhraseManager({
       showCopied(phrase.id)
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      window.alert(`コピーに失敗しました: ${message}`)
+      toast.error(`コピーに失敗しました: ${message}`)
     }
   }
 
   async function handleCopyAll() {
     if (phrases.length === 0) {
-      window.alert("コピーするフレーズがありません")
+      toast.error("コピーするフレーズがありません")
       return
     }
     const text = joinPhrasesForCopyAll(phrases)
@@ -217,100 +289,90 @@ export function PhraseManager({
       showCopied("all")
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err)
-      setBanner(`コピーに失敗しました: ${message}`)
+      toast.error(`コピーに失敗しました: ${message}`)
     }
   }
 
   return (
     <div className={cn("flex flex-col gap-6", isPending && "opacity-70")}>
-      {banner ? (
-        <p className="text-sm text-muted-foreground" role="status">
-          {banner}
-        </p>
-      ) : null}
-
+      <PhraseActionBar
+        phraseCount={phrases.length}
+        limit={limit}
+        mode={mode}
+        canCopyAll={canCopyAll}
+        isCopyAllCopied={isCopied("all")}
+        canAdd={canAdd}
+        onCopyAll={() => void handleCopyAll()}
+        onAdd={startDraft}
+      />
       {displayPhrases.length === 0 ? (
-        <p className="text-sm text-muted-foreground">フレーズがありません。</p>
+        <p className="text-sm text-muted-foreground">No items</p>
       ) : (
         <>
-          {phrases.length > 0 ? (
-            <Button
-              type="button"
-              variant="outline"
-              disabled={isCopied("all")}
-              onClick={() => void handleCopyAll()}
-            >
-              {isCopied("all") ? "Copied!" : "Copy All"}
-            </Button>
-          ) : null}
           <TooltipProvider>
-            <PhraseTableShell>
-              {displayPhrases.map((p) =>
-                editingId === p.id ? (
-                  <TableRow key={p.id}>
-                    <TableCell className="max-w-0 min-w-0 align-middle">
-                      <PhraseEditCell
-                        editingId={editingId}
-                        content={content}
-                        banner={banner}
-                        setEditContent={setEditContent}
-                        setBanner={setBanner}
-                        cancelEdit={cancelEdit}
-                        handleSaveEdit={handleSaveEdit}
-                      />
-                    </TableCell>
-                    <TableCell className="w-20 text-right align-middle">
-                      <PhraseEditActions
-                        onOk={() => void handleSaveEdit(content)}
-                        disabledOk={false}
-                        onCancel={cancelEdit}
-                        disabledCancel={false}
-                      />
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  <TableRow
-                    key={p.id}
-                    className={cn(
-                      isCopied(p.id) && "bg-primary/10 transition-colors"
+            <PhraseList>
+              {displayPhrases.map((p) => {
+                const isDraft = p.id === DRAFT_PHRASE_ID
+                const isEditing = editingId === p.id
+
+                return (
+                  <div key={p.id} ref={isDraft ? draftRowRef : undefined}>
+                    {isEditing ? (
+                      <PhraseCard key={p.id}>
+                        <div className="w-full min-w-0 flex-1">
+                          <PhraseEditCell
+                            editingId={editingId}
+                            content={content}
+                            error={editError}
+                            autoFocusOnEdit={!isDraft}
+                            inputRef={isDraft ? draftInputRef : undefined}
+                            setEditContent={setEditContent}
+                            setError={setEditError}
+                            cancelEdit={cancelEdit}
+                            handleSaveEdit={handleSaveEdit}
+                          />
+                        </div>
+                        <div className="shrink-0">
+                          <PhraseEditActions
+                            onOk={() => void handleSaveEdit(content)}
+                            disabledOk={false}
+                            onCancel={cancelEdit}
+                            disabledCancel={false}
+                          />
+                        </div>
+                      </PhraseCard>
+                    ) : (
+                      <PhraseCard
+                        key={p.id}
+                        className={cn(
+                          (isCopied(p.id) || isCopied("all")) &&
+                            "bg-primary/10 transition-colors"
+                        )}
+                      >
+                        <div className="w-full min-w-0 flex-1">
+                          <PhraseContentCell
+                            phrase={p}
+                            isCopied={isCopied(p.id) || isCopied("all")}
+                            onStartEdit={startEdit}
+                          />
+                        </div>
+                        <div className="shrink-0">
+                          <PhraseRowActions
+                            onCopy={() => void handleCopy(p)}
+                            disabledCopy={isCopied(p.id)}
+                            onDelete={() => handleDelete(p.id)}
+                            phrasePreview={p.content}
+                          />
+                        </div>
+                      </PhraseCard>
                     )}
-                  >
-                    <TableCell className="max-w-0 min-w-0 align-middle text-sm">
-                      <PhraseContentCell
-                        phrase={p}
-                        isCopied={isCopied(p.id)}
-                        onStartEdit={startEdit}
-                      />
-                    </TableCell>
-                    <TableCell className="w-20 text-right align-middle">
-                      <PhraseRowActions
-                        onCopy={() => void handleCopy(p)}
-                        disabledCopy={isCopied(p.id)}
-                        onDelete={() => handleDelete(p.id)}
-                        phrasePreview={p.content}
-                      />
-                    </TableCell>
-                  </TableRow>
+                  </div>
                 )
-              )}
-            </PhraseTableShell>
+              })}
+            </PhraseList>
           </TooltipProvider>
         </>
       )}
-      <div className="flex items-center gap-4">
-        <AddPhraseControl
-          phrases={phrases}
-          disabled={editingId === draftRow?.id || isAtLimit}
-          onStartDraft={startDraft}
-        />
-        {mode === "guest" ? (
-          <p className="text-sm text-muted-foreground">
-            {phrases.length} / {limit} used
-          </p>
-        ) : (
-          <p className="text-sm text-muted-foreground">{phrases.length} 件</p>
-        )}
-      </div>
     </div>
   )
 }

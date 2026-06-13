@@ -23,7 +23,6 @@ frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
 frontend/pnpm-debug.log*
-jjjjjjj.
 
 # env files
 frontend/.env*.local
@@ -34,4 +33,4 @@ frontend/next-env.d.ts
 
 # Global / OS
 .DS_Store
-,,,,*.pem
+*.pem

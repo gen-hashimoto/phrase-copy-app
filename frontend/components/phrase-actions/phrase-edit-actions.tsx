@@ -2,7 +2,7 @@
 /** action buttons while a row is in edit mode */
 
 import { Save, X } from "lucide-react"
-import { IconActionButton } from "@/components/icon-action-button"
+import { IconActionButton } from "@/components/phrase-actions/icon-action-button"
 
 type Props = {
   onOk: () => void
