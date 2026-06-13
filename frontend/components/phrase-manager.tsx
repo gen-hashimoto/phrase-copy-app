@@ -29,6 +29,11 @@ type PhraseManagerProps = {
   limit?: number
 }
 
+type ApiErrorBody = {
+  detail?: string
+  error?: string
+}
+
 export function PhraseManager({
   phrases,
   mode,
@@ -51,7 +56,7 @@ export function PhraseManager({
 
   const { showCopied, isCopied } = useCopiedFeedback()
 
-  const isAtLimit = mode === "guest" && limit != null && phrases.length >= limit
+  const isAtLimit = limit != null && phrases.length >= limit
   const canAdd = draftRow === null && !isAtLimit
   const canCopyAll = phrases.length > 0
 
@@ -68,6 +73,15 @@ export function PhraseManager({
     startTransition(() => {
       router.refresh()
     })
+  }
+
+  async function readApiError(res: Response): Promise<string> {
+    const data = (await res.json().catch(() => null)) as ApiErrorBody | null
+
+    if (data?.detail) return data.detail
+    if (data?.error) return data.error
+
+    return `作成に失敗しました (${res.status})`
   }
 
   async function handleCreate(nextContent: string) {
@@ -97,11 +111,12 @@ export function PhraseManager({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: nextContent }),
     })
+
     if (!res.ok) {
-      const text = await res.text()
-      toast.error(`作成に失敗しました (${res.status}): ${text}`)
+      toast.error(await readApiError(res))
       return
     }
+
     clearDraft()
     toast.success("作成しました。")
     refreshList()

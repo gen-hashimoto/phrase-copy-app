@@ -1,6 +1,6 @@
 import { AppShellServer } from "@/components/app-shell-server"
 import { GuestPhraseList } from "@/components/guest-phrase-list"
-import { UserPhraseList } from "@/components/user-phrase-list"
+import { FreeUserPhraseList } from "@/components/free-user-phrase-list"
 import { serverAppOrigin } from "@/lib/server-app-origin"
 import { cookieHeaderFromRequest } from "@/lib/cookie-header-from-request"
 import { fetchMe } from "@/lib/fetch-me"
@@ -48,7 +48,7 @@ export default async function Page() {
 
   return (
     <AppShellServer user={me} showLoginButton={true}>
-      <UserPhraseList phrases={phrases} />
+      <FreeUserPhraseList phrases={phrases} />
     </AppShellServer>
   )
 }

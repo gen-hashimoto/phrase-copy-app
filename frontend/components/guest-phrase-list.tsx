@@ -4,23 +4,25 @@ import { useState, useEffect } from "react"
 
 import type { PhraseRead } from "@/types/phrase"
 import { PhraseManager } from "@/components/phrase-manager"
+import { GUEST_PHRASE_LIMIT } from "@/lib/phrase-limits"
 
-import {
-  GuestNoticeBanner,
-  type GuestNoticeKind,
-} from "@/components/guest-notice-banner"
+import { NoticeBanner, type NoticeItem } from "@/components/notice-banner"
 
-const GUEST_LIMIT = 10
-
-function getGuestNoticeKinds(phraseCount: number): GuestNoticeKind[] {
-  const notices: GuestNoticeKind[] = []
+function getGuestNoticeKinds(phraseCount: number): NoticeItem[] {
+  const notices: NoticeItem[] = []
 
   if (phraseCount > 0) {
-    notices.push("first-guest-phrase")
+    notices.push({
+      id: "first-guest-phrase",
+      message: "未ログイン中はフレーズが保存されません。",
+    })
   }
 
-  if (phraseCount >= GUEST_LIMIT) {
-    notices.push("guest-limit-reached")
+  if (phraseCount >= GUEST_PHRASE_LIMIT) {
+    notices.push({
+      id: "guest-limit-reached",
+      message: `ログインすると${GUEST_PHRASE_LIMIT}件を超えて保存できます。`,
+    })
   }
   return notices
 }
@@ -54,13 +56,13 @@ export function GuestPhraseList() {
 
   return (
     <div className="flex flex-col gap-6">
-      <GuestNoticeBanner notices={guestNotices} />
+      <NoticeBanner notices={guestNotices} />
       <PhraseManager
         mode="guest"
         phrases={phrases}
         onGuestChange={setPhrases}
         onGuestEditInProgressChange={setHasGuestEditInProgress}
-        limit={GUEST_LIMIT}
+        limit={GUEST_PHRASE_LIMIT}
       />
       {/* Investigation note: usage display owned by GuestPhraseList. */}
       {/* <p className="text-sm text-muted-foreground"> */}
