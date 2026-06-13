@@ -1,4 +1,4 @@
-import { Metadata } from "next"
+import type { Metadata } from "next"
 import { Suspense } from "react"
 import { Geist, Geist_Mono } from "next/font/google"
 
@@ -30,14 +30,14 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="en"
-      suppressHydrationWarning
       className={cn(
         "antialiased",
         fontMono.variable,
         "font-sans",
-        geist.variable
+        geist.variable,
       )}
+      lang="en"
+      suppressHydrationWarning
     >
       <body>
         <ThemeProvider>
@@ -51,3 +51,4 @@ export default function RootLayout({
     </html>
   )
 }
+
