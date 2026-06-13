@@ -3,6 +3,8 @@
 import { type LucideIcon } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { IconButtonOnly } from "@/components/phrase-actions/icon-button-only"
+import { useCanHover } from "@/hooks/use-can-hover"
 
 import {
   Tooltip,
@@ -10,7 +12,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-type IconActionButtonProps = {
+type Props = {
   label: string
   icon: LucideIcon
   variant?: React.ComponentProps<typeof Button>["variant"]
@@ -18,28 +20,19 @@ type IconActionButtonProps = {
   disabled?: boolean
 }
 
-export function IconActionButton({
-  label,
-  icon: Icon,
-  variant = "ghost",
-  onClick,
-  disabled,
-}: IconActionButtonProps) {
+export function IconActionButton(props: Props) {
+  const canHover = useCanHover()
+
+  if (!canHover) {
+    return <IconButtonOnly {...props} />
+  }
+
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Button
-          aria-label={label}
-          onClick={onClick}
-          size="icon"
-          type="button"
-          variant={variant}
-          disabled={disabled}
-        >
-          <Icon aria-hidden="true" />
-        </Button>
+        <IconButtonOnly {...props} />
       </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
+      <TooltipContent>{props.label}</TooltipContent>
     </Tooltip>
   )
 }
