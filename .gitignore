@@ -25,11 +25,30 @@ frontend/yarn-error.log*
 frontend/pnpm-debug.log*
 
 # env files
-frontend/.env*.local
+.env
+.env.*
+!.env.example
+
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+backend/.env
+backend/.env.*
+!backend/.env.example
+
+infra/.env
+infra/.env.*
+!infra/.env.example
 
 # typescript
 frontend/*.tsbuildinfo
 frontend/next-env.d.ts
+
+# python
+backend/.venv/
+backend/__pycache__/
+backend/**/*.pyc
 
 # Global / OS
 .DS_Store

@@ -16,6 +16,6 @@ class Settings:
 
 
 settings = Settings(
-    jwt_secret=os.getenv("JWT_SECRET", "dev-only-change-me"),
+    jwt_secret=os.environ["JWT_SECRET"],
     cookie_secure=env_bool("AUTH_COOKIE_SECURE", False),
 )
