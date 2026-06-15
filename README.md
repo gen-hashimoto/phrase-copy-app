@@ -21,43 +21,36 @@ This app is a lightweight tool for managing and copying your frequently used phr
 
 Environment variables are managed with example files.
 
-- `frontend/.env.example` contains example values for the frontend.
-- `infra/.env.example` contains example values for Docker, the database, and the backend.
+- `infra/.env.local.example`, `infra/.env.prod.example` contain example values for Docker, the database, and the backend.
 - Local `.env` files are ignored by Git.
 
 For local development, copy the example files and update the values.
 
 ```bash
-# Frontend
-cp frontend/.env.example frontend/.env.local
-
 # Backend and database
-cp infra/.env.example infra/.env
+cp infra/.env.local.example infra/.env.local
 ```
 
 Do not commit real secrets or local passwords.
 
 ## Getting Started
 
-In the local development environment, the backend and database run with Docker Compose.  
-The frontend runs with npm.
-
 ```bash
-# Backend and database
 # Run from the project root
-cd infra
-docker compose up --build
-```
-
-```bash
-# Frontend
-# Run from the project root
-cd frontend
-npm install
-npm run dev
+docker compose -f infra/docker-compose.local.yml --env-file infra/.env.local up --build
 ```
 
 Open `http://localhost:3000` in your browser.
+
+## Production Start
+
+```bash
+# Run from the project root
+cp infra/.env.prod.example infra/.env.prod
+
+# Edit .env.prod before starting.
+docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d --build
+```
 
 ## Design Process
 
@@ -83,7 +76,7 @@ Open `http://localhost:3000` in your browser.
 
 ## Why I Built This
 
-I often work with Linux commands during system maintenance.  
+I often work with Linux commands during system maintenance.
 I wanted a simple way to prepare and copy frequently used commands without mistakes.
 
 This app was built to make copying commands easier, faster, and safer.

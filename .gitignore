@@ -39,7 +39,8 @@ backend/.env.*
 
 infra/.env
 infra/.env.*
-!infra/.env.example
+!infra/.env.local.example
+!infra/.env.prod.example
 
 # typescript
 frontend/*.tsbuildinfo
