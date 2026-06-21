@@ -19,6 +19,7 @@ from app.core.jwt_cookie import (
 )
 from app.models.user import User
 from app.settings import settings
+from app.services.email_service import send_magic_link_email
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -86,7 +87,13 @@ def request_magic_link(body: MagicLinkRequest, db: Session = Depends(get_db)):
     db.commit()
 
     # Development only. Production should send email and return no token-bearing URL.
-    return MagicLinkResponse(ok=True, dev_link=f"/auth/verify?token={token}")
+    if settings.is_development:
+        return MagicLinkResponse(ok=True, dev_link=f"/auth/verify?token={token}")
+
+    # For production, send magic link here.
+    verify_url = f"{settings.app_origin}/auth/verify?token={token}"
+    send_magic_link_email(email, verify_url)
+    return MagicLinkResponse(ok=True, dev_link=None)
 
 
 @router.post("/magic-link/verify")
