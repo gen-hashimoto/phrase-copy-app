@@ -7,7 +7,7 @@ from fastapi import HTTPException, Request, Response
 MAGIC_LINK_TOKEN_BYTES = 32
 MAGIC_LINK_TTL_MINUTES = 15
 
-AUTH_COOKIE_NAME = "phrase_copy_session"
+AUTH_COOKIE_NAME = "phrases_session"
 JWT_ALGORITHM = "HS256"
 JWT_TTL_MINUTES = 60 * 24
 

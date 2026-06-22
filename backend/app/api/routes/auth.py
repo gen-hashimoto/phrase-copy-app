@@ -43,6 +43,9 @@ class MagicLinkVerifyRequest(BaseModel):
 
 # The frontend checks this stable code instead of parsing human-readable text.
 ACCOUNT_CREATION_CONFIRMATION_REQUIRED = "ACCOUNT_CREATION_CONFIRMATION_REQUIRED"
+TOKEN_INVALID = "TOKEN_INVALID"
+TOKEN_EXPIRED = "TOKEN_EXPIRED"
+TOKEN_USED = "TOKEN_USED"
 
 
 def ensure_utc(dt: datetime) -> datetime:
@@ -107,12 +110,23 @@ def verify_magic_link(
 
     # Treat missing, expired, or already-used links as failed authentication.
     if user is None:
-        raise HTTPException(status_code=401, detail="Invalid magic link")
+        raise HTTPException(
+            status_code=401,
+            detail={"code": TOKEN_INVALID, "message": "Invalid magic link"},
+        )
+
     expires_at = user.magic_link_expires_at
     if expires_at is None or ensure_utc(expires_at) <= now:
-        raise HTTPException(status_code=401, detail="Magic link expired")
+        raise HTTPException(
+            status_code=401,
+            detail={"code": TOKEN_EXPIRED, "message": "Magic link expired"},
+        )
+
     if user.magic_link_used_at is not None:
-        raise HTTPException(status_code=401, detail="Magic link already used")
+        raise HTTPException(
+            status_code=401,
+            detail={"code": TOKEN_USED, "message": "Magic link already used"},
+        )
 
     # Mark the link consumed before issuing the session cookie.
     user.magic_link_used_at = now
