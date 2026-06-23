@@ -20,19 +20,18 @@ from app.core.jwt_cookie import (
 from app.models.user import User
 from app.settings import settings
 from app.services.email_service import send_magic_link_email
+from app.core.rate_limit import check_rate_limit, client_ip
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 class MagicLinkRequest(BaseModel):
     email: EmailStr
-    # The frontend sends False for the first request.
-    # It sends True only after the user confirms the AlertDialog.
-    confirm_account_creation: bool = False
 
 
 class MagicLinkResponse(BaseModel):
     ok: bool
+    message: str
     # Development only. Production should send the email and return None here.
     dev_link: str | None = None
 
@@ -42,10 +41,16 @@ class MagicLinkVerifyRequest(BaseModel):
 
 
 # The frontend checks this stable code instead of parsing human-readable text.
-ACCOUNT_CREATION_CONFIRMATION_REQUIRED = "ACCOUNT_CREATION_CONFIRMATION_REQUIRED"
 TOKEN_INVALID = "TOKEN_INVALID"
 TOKEN_EXPIRED = "TOKEN_EXPIRED"
 TOKEN_USED = "TOKEN_USED"
+
+RATE_LIMITED = "RATE_LIMITED"
+
+MAGIC_LINK_IP_LIMIT = 5
+MAGIC_LINK_IP_WINDOW_SECONDS = 15 * 60
+MAGIC_LINK_EMAIL_LIMIT = 3
+MAGIC_LINK_EMAIL_WINDOW_SECONDS = 15 * 60
 
 
 def ensure_utc(dt: datetime) -> datetime:
@@ -55,24 +60,41 @@ def ensure_utc(dt: datetime) -> datetime:
 
 
 @router.post("/magic-link", response_model=MagicLinkResponse)
-def request_magic_link(body: MagicLinkRequest, db: Session = Depends(get_db)):
-    email = body.email.lower()
-    user = db.scalar(select(User).where(User.email == email))
-
-    # Important invariant:
-    # If this email is new, do not create a User until the user has explicitly
-    # accepted the "an account will be created" dialog.
-    if user is None and not body.confirm_account_creation:
+def request_magic_link(
+    body: MagicLinkRequest, request: Request, db: Session = Depends(get_db)
+):
+    ip = client_ip(request)
+    if not check_rate_limit(
+        f"ip:{ip}",
+        max_count=MAGIC_LINK_IP_LIMIT,
+        window_seconds=MAGIC_LINK_IP_WINDOW_SECONDS,
+    ):
         raise HTTPException(
-            status_code=409,
+            status_code=429,
             detail={
-                "code": ACCOUNT_CREATION_CONFIRMATION_REQUIRED,
-                "message": "Account creation confirmation is required.",
+                "code": RATE_LIMITED,
+                "message": "Too many requests. Please try again later.",
             },
         )
 
-    # This branch runs only after confirmation for new users.
-    # Existing users skip this branch and receive a normal magic link.
+    email = body.email.lower()
+
+    if not check_rate_limit(
+        f"email:{email}",
+        max_count=MAGIC_LINK_EMAIL_LIMIT,
+        window_seconds=MAGIC_LINK_EMAIL_WINDOW_SECONDS,
+    ):
+        raise HTTPException(
+            status_code=429,
+            detail={
+                "code": RATE_LIMITED,
+                "message": "Too many requests for this email. Please try again later.",
+            },
+        )
+
+    user = db.scalar(select(User).where(User.email == email))
+    is_new_user = user is None  # For email body only; omit from API response
+
     if user is None:
         user = User(email=email)
         db.add(user)
@@ -89,14 +111,19 @@ def request_magic_link(body: MagicLinkRequest, db: Session = Depends(get_db)):
     # If the commit fails, the user should not receive a usable link.
     db.commit()
 
+    # Same message for new and existing users (prevents enumeration)
+    success_message = "メールを確認してください。届いたリンクからログインできます。"
+
     # Development only. Production should send email and return no token-bearing URL.
     if settings.is_development:
-        return MagicLinkResponse(ok=True, dev_link=f"/auth/verify?token={token}")
+        return MagicLinkResponse(
+            ok=True, message=success_message, dev_link=f"/auth/verify?token={token}"
+        )
 
     # For production, send magic link here.
     verify_url = f"{settings.app_origin}/auth/verify?token={token}"
-    send_magic_link_email(email, verify_url)
-    return MagicLinkResponse(ok=True, dev_link=None)
+    send_magic_link_email(email, verify_url, is_new_user=is_new_user)
+    return MagicLinkResponse(ok=True, message=success_message, dev_link=None)
 
 
 @router.post("/magic-link/verify")
