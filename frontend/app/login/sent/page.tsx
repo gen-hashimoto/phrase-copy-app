@@ -17,22 +17,24 @@ export default async function LoginSentPage() {
 
   return (
     <AppShellServer user={null} showLoginButton={false}>
-      <h1>メールを送信しました</h1>
-      <p>
-        Magic Linkを送信しました。メール内のリンクを開いてログインしてください。
-      </p>
-      <p className="text-muted-foreground">15 分間有効です。</p>
-      <p className="text-sm text-muted-foreground">
-        届かない場合は迷惑メールフォルダもご確認ください。
-      </p>
+      <div className="flex flex-col gap-2">
+        <h1>メールを送信しました</h1>
+        <p>
+          MagicLinkを送信しました。メール内のリンクを開いてログインしてください。
+        </p>
+        <p className="text-muted-foreground">15 分間有効です。</p>
+        <p className="text-sm text-muted-foreground">
+          届かない場合は迷惑メールフォルダもご確認ください。
+        </p>
 
-      <ResendMagicLinkButton />
+        <ResendMagicLinkButton />
 
-      <p>
-        <a href="/login" className="text-sm underline">
-          ログイン画面に戻る
-        </a>
-      </p>
+        <p>
+          <a href="/login" className="text-sm underline">
+            ログイン画面に戻る
+          </a>
+        </p>
+      </div>
     </AppShellServer>
   )
 }
