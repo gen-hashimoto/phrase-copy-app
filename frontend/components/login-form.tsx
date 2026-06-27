@@ -1,9 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "sonner"
+import { saveMagicLinkSession } from "@/lib/magic-link-session"
 
 type MagicLinkResponse = {
   ok?: boolean
@@ -24,6 +26,8 @@ export function LoginForm() {
   const [message, setMessage] = useState<string | null>(null)
   const [devLink, setDevLink] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const router = useRouter()
 
   async function requestMagicLink() {
     // Normalize before sending so the same address does not create duplicates
@@ -65,8 +69,16 @@ export function LoginForm() {
       }
 
       toast.success(data.message ?? "Magic Link を送信しました。")
+
       if (typeof data.dev_link === "string") {
         setDevLink(data.dev_link)
+      }
+
+      if (!data.dev_link) {
+        // Save email and sent-time on success before redirecting
+        saveMagicLinkSession(normalizedEmail)
+        // Redirect
+        router.push("/login/sent")
       }
     } finally {
       setIsSubmitting(false)
