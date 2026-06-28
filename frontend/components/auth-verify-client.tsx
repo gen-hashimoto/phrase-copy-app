@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
+import { mapVerifyError } from "@/lib/auth-errors"
 
 type Props = {
   token?: string
@@ -25,7 +26,8 @@ export function AuthVerifyClient({ token }: Props) {
         })
 
         if (!res.ok) {
-          setErrorMessage("リンクが無効、または有効期限切れです。")
+          const data = await res.json().catch(() => null)
+          setErrorMessage(mapVerifyError(data?.detail ?? data))
           setStatus("error")
           return
         }
