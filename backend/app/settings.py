@@ -17,7 +17,7 @@ class Settings:
     ses_from_email: str
     app_origin: str
     is_development: bool
-    email_backend: str
+    email_backend: str  # "ses" / "smtp" / "dev"
     smtp_host: str
     smtp_port: int
 
