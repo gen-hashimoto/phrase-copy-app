@@ -29,11 +29,9 @@ export default async function LoginSentPage() {
 
         <ResendMagicLinkButton />
 
-        <p>
-          <a href="/login" className="text-sm underline">
-            ログイン画面に戻る
-          </a>
-        </p>
+        <a href="/login" className="text-sm underline">
+          ログイン画面に戻る
+        </a>
       </div>
     </AppShellServer>
   )
