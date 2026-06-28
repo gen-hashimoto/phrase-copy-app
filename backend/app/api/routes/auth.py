@@ -114,14 +114,15 @@ def request_magic_link(
     # Same message for new and existing users (prevents enumeration)
     success_message = "メールを確認してください。届いたリンクからログインできます。"
 
-    # Development only. Production should send email and return no token-bearing URL.
-    if settings.is_development:
+    verify_url = f"{settings.app_origin}/auth/verify?token={token}"
+
+    # For dev_link.
+    if settings.email_backend == "dev":
         return MagicLinkResponse(
             ok=True, message=success_message, dev_link=f"/auth/verify?token={token}"
         )
 
-    # For production, send magic link here.
-    verify_url = f"{settings.app_origin}/auth/verify?token={token}"
+    # For email. smpt(Mailpit) for development, ses for production.
     send_magic_link_email(email, verify_url, is_new_user=is_new_user)
     return MagicLinkResponse(ok=True, message=success_message, dev_link=None)
 

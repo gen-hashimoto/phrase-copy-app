@@ -17,6 +17,9 @@ class Settings:
     ses_from_email: str
     app_origin: str
     is_development: bool
+    email_backend: str
+    smtp_host: str
+    smtp_port: int
 
 
 settings = Settings(
@@ -26,4 +29,7 @@ settings = Settings(
     ses_from_email=os.environ["SES_FROM_EMAIL"],
     app_origin=os.environ["APP_ORIGIN"],
     is_development=env_bool("IS_DEVELOPMENT", False),
+    email_backend=os.environ["EMAIL_BACKEND"],
+    smtp_host=os.getenv("SMTP_HOST", "mailpit"),
+    smtp_port=int(os.getenv("SMTP_PORT", "1025")),
 )
