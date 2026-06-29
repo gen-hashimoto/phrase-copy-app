@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
 import { AuthToastHandler } from "@/components/auth-toast-handler"
+import { GoogleAdSenseScript } from "@/components/google-adsense-script"
 import { GoogleAnalytics } from "@/components/google-analytics"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
@@ -42,6 +43,7 @@ export default function RootLayout({
     >
       <body>
         <GoogleAnalytics />
+        <GoogleAdSenseScript />
         <ThemeProvider>
           {children}
           <Toaster position="bottom-right" />
