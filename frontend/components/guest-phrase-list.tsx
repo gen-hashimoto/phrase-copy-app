@@ -7,6 +7,7 @@ import { PhraseManager } from "@/components/phrase-manager"
 import { GUEST_PHRASE_LIMIT } from "@/lib/phrase-limits"
 
 import { NoticeBanner, type NoticeItem } from "@/components/notice-banner"
+import { AdSenseBanner } from "@/components/adsense-banner"
 
 function getGuestNoticeKinds(phraseCount: number): NoticeItem[] {
   const notices: NoticeItem[] = []
@@ -68,6 +69,7 @@ export function GuestPhraseList() {
       {/* <p className="text-sm text-muted-foreground"> */}
       {/*   {phrases.length} / {GUEST_LIMIT} used */}
       {/* </p> */}
+      <AdSenseBanner />
     </div>
   )
 }

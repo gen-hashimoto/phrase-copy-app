@@ -2,10 +2,12 @@ import { Metadata } from "next"
 import { AppShellServer } from "@/components/app-shell-server"
 import { ResendMagicLinkButton } from "@/components/resend-magic-link-button"
 import { fetchMe } from "@/lib/fetch-me"
+import { noIndexRobots } from "@/lib/no-index-robots"
 import { redirect } from "next/navigation"
 
 export const metadata: Metadata = {
   title: "Sent",
+  ...noIndexRobots,
 }
 
 export default async function LoginSentPage() {

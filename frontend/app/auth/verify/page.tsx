@@ -2,10 +2,12 @@ import { Metadata } from "next"
 import { AppShellServer } from "@/components/app-shell-server"
 import { AuthVerifyClient } from "@/components/auth-verify-client"
 import { fetchMe } from "@/lib/fetch-me"
+import { noIndexRobots } from "@/lib/no-index-robots"
 import { redirect } from "next/navigation"
 
 export const metadata: Metadata = {
   title: "Verify",
+  ...noIndexRobots,
 }
 
 type Props = {

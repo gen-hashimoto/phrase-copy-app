@@ -3,6 +3,7 @@ import { PhraseManager } from "@/components/phrase-manager"
 import { FREE_USER_PHRASE_LIMIT } from "@/lib/phrase-limits"
 
 import { NoticeBanner, type NoticeItem } from "@/components/notice-banner"
+import { AdSenseBanner } from "@/components/adsense-banner"
 
 function getFreeUserNoticeKinds(phraseCount: number): NoticeItem[] {
   if (phraseCount < FREE_USER_PHRASE_LIMIT) return []
@@ -27,6 +28,7 @@ export function FreeUserPhraseList({ phrases }: { phrases: PhraseRead[] }) {
         phrases={phrases}
         limit={FREE_USER_PHRASE_LIMIT}
       />
+      <AdSenseBanner />
     </div>
   )
 }
