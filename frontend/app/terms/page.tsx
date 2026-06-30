@@ -23,8 +23,8 @@ export default async function TermsPage() {
     <AppShellServer user={me} showLoginButton={me === null}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">利用規約</CardTitle>
-          <CardDescription>最終更新日: 2026年6月29日</CardDescription>
+          <CardTitle className="text-lg">Terms of Service</CardTitle>
+          <CardDescription>Last updated: June 29, 2026</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm leading-relaxed">
           <p>
@@ -94,7 +94,7 @@ export default async function TermsPage() {
           </section>
 
           <Button variant="link" asChild className="h-auto p-0">
-            <Link href="/">トップへ戻る</Link>
+            <Link href="/">Back to Home</Link>
           </Button>
         </CardContent>
       </Card>

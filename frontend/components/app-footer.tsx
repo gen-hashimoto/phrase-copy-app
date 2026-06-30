@@ -10,13 +10,13 @@ export function AppFooter() {
               href="/terms"
               className="underline-offset-4 hover:text-foreground hover:underline"
             >
-              利用規約
+              Terms of Service
             </Link>
             <Link
               href="/privacy"
               className="underline-offset-4 hover:text-foreground hover:underline"
             >
-              プライバシーポリシー
+              Privacy Policy
             </Link>
           </nav>
           <span>Copyright &copy; 2026 Phrases</span>

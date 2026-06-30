@@ -23,8 +23,8 @@ export default async function PrivacyPage() {
     <AppShellServer user={me} showLoginButton={me === null}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">プライバシーポリシー</CardTitle>
-          <CardDescription>最終更新日: 2026年6月29日</CardDescription>
+          <CardTitle className="text-lg">Privacy Policy</CardTitle>
+          <CardDescription>Last updated: June 29, 2026</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm leading-relaxed">
           <p>
@@ -95,7 +95,7 @@ export default async function PrivacyPage() {
           </section>
 
           <Button variant="link" asChild className="h-auto p-0">
-            <Link href="/">トップへ戻る</Link>
+            <Link href="/">Back to Home</Link>
           </Button>
         </CardContent>
       </Card>
