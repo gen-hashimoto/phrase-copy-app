@@ -4,11 +4,14 @@ import { Geist, Geist_Mono } from "next/font/google"
 
 import "./globals.css"
 import { AuthToastHandler } from "@/components/auth-toast-handler"
+import { GoogleAnalytics } from "@/components/google-analytics"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
+import { siteOrigin } from "@/lib/site-origin"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin()),
   title: {
     default: "Phrases",
     template: "%s | Phrases",
@@ -28,6 +31,8 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const adsenseClient = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID
+
   return (
     <html
       lang="en"
@@ -39,7 +44,17 @@ export default function RootLayout({
         geist.variable
       )}
     >
+      <head>
+        {adsenseClient ? (
+          <script
+            async
+            src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${adsenseClient}`}
+            crossOrigin="anonymous"
+          />
+        ) : null}
+      </head>
       <body>
+        <GoogleAnalytics />
         <ThemeProvider>
           {children}
           <Toaster position="bottom-right" />

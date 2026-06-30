@@ -2,6 +2,12 @@
   email {$CADDY_EMAIL}
 }
 
+# Root domain -> phrases にリダイレクト
+{$ROOT_DOMAIN} {
+  redir https://{$APP_DOMAIN}{uri} permanent
+}
+
+# Phrases 本体
 {$APP_DOMAIN} {
   encode zstd gzip
 

@@ -1,13 +1,15 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { ConfirmAccountCreationAlertDialog } from "@/components/confirm-account-creation-alert-dialog"
 import { toast } from "sonner"
+import { saveMagicLinkSession } from "@/lib/magic-link-session"
 
 type MagicLinkResponse = {
   ok?: boolean
+  message?: string
   dev_link?: string | null
   error?: string
   code?: string
@@ -19,23 +21,15 @@ type MagicLinkResponse = {
   }
 }
 
-// Keep this value shared conceptually with the backend.
-// In production code, consider exporting it from a small shared constants module
-// if the frontend and backend live in the TypeScript package.
-const ACCOUNT_CREATION_CONFIRMATION_REQUIRED =
-  "ACCOUNT_CREATION_CONFIRMATION_REQUIRED"
-
 export function LoginForm() {
   const [email, setEmail] = useState("")
   const [message, setMessage] = useState<string | null>(null)
   const [devLink, setDevLink] = useState<string | null>(null)
-  // `pendingEmail` controls the AlertDialog.
-  // A non-null value means the backend refused to create a new account
-  // until the user explicitly confirms the side effect.
-  const [pendingEmail, setPendingEmail] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  async function requestMagicLink(confirmAccountCreation: boolean) {
+  const router = useRouter()
+
+  async function requestMagicLink() {
     // Normalize before sending so the same address does not create duplicates
     // because of casing or accidental whitespace.
     const normalizedEmail = email.trim().toLowerCase()
@@ -49,44 +43,42 @@ export function LoginForm() {
     setDevLink(null)
 
     try {
-      // First submit: confirm_account_creation is false.
-      // Confirm submit: confirm_account_creation is true.
       // The backend remains the source of truth for whether the email exists.
       const res = await fetch("/api/auth/magic-link", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: normalizedEmail,
-          confirm_account_creation: confirmAccountCreation,
         }),
       })
       const data = (await res.json()) as MagicLinkResponse
 
-      // The error code may come from the backend directly (`detail.code`)
-      // or from the Next.js proxy route after normalization (`code`)
-      const errorCode = data.code ?? data.detail?.code
-
-      // 409 means "the request is valid, but needs user confirmation first".
-      // Do not show this as a failure message; open the confirmation dialog.
-      if (
-        res.status === 409 &&
-        errorCode === ACCOUNT_CREATION_CONFIRMATION_REQUIRED
-      ) {
-        setPendingEmail(normalizedEmail)
-        return
-      }
-
       // Any other non-OK response is a real failure for this form.
       if (!res.ok) {
+        const errorCode = data.code ?? data.detail?.code
+        if (res.status == 429 && errorCode == "RATE_LIMITED") {
+          setMessage(
+            typeof data.detail === "object" && data.detail?.message
+              ? data.detail.message
+              : "しばらく待ってから再度お試しください。"
+          )
+          return
+        }
         setMessage(data.error ?? "Magic Link の送信に失敗しました。")
         return
       }
 
-      // Success covers both existing users and confirmed new account creation.
-      setPendingEmail(null)
-      toast.success("Magic Link を送信しました。")
+      toast.success(data.message ?? "Magic Link を送信しました。")
+
       if (typeof data.dev_link === "string") {
         setDevLink(data.dev_link)
+      }
+
+      if (!data.dev_link) {
+        // Save email and sent-time on success before redirecting
+        saveMagicLinkSession(normalizedEmail)
+        // Redirect
+        router.push("/login/sent")
       }
     } finally {
       setIsSubmitting(false)
@@ -101,7 +93,7 @@ export function LoginForm() {
           event.preventDefault()
           // The normal submit path never creates an account immediately.
           // If the email is new, the backend returns 409 and the dialog opens.
-          void requestMagicLink(false)
+          void requestMagicLink()
         }}
       >
         <label className="flex flex-col gap-1 text-sm">
@@ -117,7 +109,7 @@ export function LoginForm() {
 
         {/* Keep a short inline explanation visible before the user submits. */}
         <p className="text-sm text-muted-foreground">
-          初めて利用するメールアドレスの場合、確認後にアカウントが作成されます。
+          未登録のメールアドレスの場合、アカウントが作成されます。
         </p>
 
         <div className="flex sm:justify-end">
@@ -135,12 +127,6 @@ export function LoginForm() {
         ) : null}
         {devLink ? <a href={devLink}>Open dev link</a> : null}
       </form>
-      <ConfirmAccountCreationAlertDialog
-        pendingEmail={pendingEmail}
-        setPendingEmail={setPendingEmail}
-        isSubmitting={isSubmitting}
-        requestMagicLink={requestMagicLink}
-      />
     </>
   )
 }

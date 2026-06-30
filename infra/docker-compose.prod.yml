@@ -47,6 +47,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env.prod
+    environment:
+      AWS_REGION: ${AWS_REGION}
     expose:
       # Only expose this port to other containers.
       - "8000"

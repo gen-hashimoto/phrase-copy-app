@@ -1,7 +1,14 @@
+import { Metadata } from "next"
 import { AppShellServer } from "@/components/app-shell-server"
 import { AuthVerifyClient } from "@/components/auth-verify-client"
 import { fetchMe } from "@/lib/fetch-me"
+import { noIndexRobots } from "@/lib/no-index-robots"
 import { redirect } from "next/navigation"
+
+export const metadata: Metadata = {
+  title: "Verify",
+  ...noIndexRobots,
+}
 
 type Props = {
   searchParams: Promise<{
@@ -24,7 +31,16 @@ export default async function VerifyPage({ searchParams }: Props) {
       {token ? (
         <AuthVerifyClient token={token} />
       ) : (
-        <p className="text-sm text-muted-foreground">無効なリンクです。</p>
+        <div className="flex flex-col gap-2">
+          <h1>無効なリンクです</h1>
+          <p className="text-sm text-muted-foreground">
+            リンクが正しくないか、期限切れの可能性があります。
+          </p>
+
+          <a href="/login" className="text-sm underline">
+            ログイン画面に戻る
+          </a>
+        </div>
       )}
     </AppShellServer>
   )
