@@ -7,9 +7,11 @@ import { AuthToastHandler } from "@/components/auth-toast-handler"
 import { GoogleAnalytics } from "@/components/google-analytics"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
+import { siteOrigin } from "@/lib/site-origin"
 import { cn } from "@/lib/utils"
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteOrigin()),
   title: {
     default: "Phrases",
     template: "%s | Phrases",
