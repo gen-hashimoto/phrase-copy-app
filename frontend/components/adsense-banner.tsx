@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef, useSyncExternalStore } from "react"
 
 const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID
 // Replace with your ad unit slot ID from AdSense dashboard
@@ -12,17 +12,29 @@ declare global {
   }
 }
 
+function useHydrated() {
+  return useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  )
+}
+
 export function AdSenseBanner() {
+  const hydrated = useHydrated()
+  const adPushed = useRef(false)
+
   useEffect(() => {
-    if (!ADSENSE_CLIENT || !AD_SLOT) return
+    if (!hydrated || !ADSENSE_CLIENT || !AD_SLOT || adPushed.current) return
+    adPushed.current = true
     try {
       ;(window.adsbygoogle = window.adsbygoogle || []).push({})
     } catch {
       // ignore if script not loaded yet
     }
-  }, [])
+  }, [hydrated])
 
-  if (!ADSENSE_CLIENT || !AD_SLOT) return null
+  if (!hydrated || !ADSENSE_CLIENT || !AD_SLOT) return null
 
   return (
     <div className="my-4 flex justify-center">
