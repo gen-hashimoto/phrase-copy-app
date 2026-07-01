@@ -17,6 +17,9 @@ export const metadata: Metadata = {
     template: "%s | Phrases",
   },
   description: "Save and copy frequently used phrases quickly.",
+  verification: process.env.GSC_SITE_VERIFICATION
+    ? { google: process.env.GSC_SITE_VERIFICATION }
+    : undefined,
 }
 
 const geist = Geist({ subsets: ["latin"], variable: "--font-sans" })
