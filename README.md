@@ -16,6 +16,7 @@ This app is a lightweight tool for managing and copying your frequently used phr
 - Frontend: Next.js, React, TypeScript, Tailwind CSS, shadcn/ui
 - Backend: FastAPI, MySQL
 - Auth: Magic Link, HttpOnly cookie
+- Ops: Docker Compose, Makefile (`prod` / `dev` targets)
 
 ## Environment Variables
 
@@ -36,11 +37,20 @@ Do not commit real secrets or local passwords.
 ## Getting Started
 
 ```bash
-# Run from the project root
-docker compose -f infra/docker-compose.local.yml --env-file infra/.env.local up --build
+# Run from the project root (after creating infra/.env.local)
+make deploy-dev
 ```
 
 Open `http://localhost:3000` in your browser.
+
+Useful follow-ups:
+
+```bash
+make ps-dev
+make logs-dev
+make restart-dev
+make down-dev
+```
 
 ### Local Magic Link Email (Mailpit)
 
@@ -51,10 +61,31 @@ With `EMAIL_BACKEND=smtp` in `infra/.env.local`, magic link emails are delivered
 ```bash
 # Run from the project root
 cp infra/.env.prod.example infra/.env.prod
-
 # Edit .env.prod before starting.
-docker compose -f infra/docker-compose.prod.yml --env-file infra/.env.prod up -d --build
+
+make deploy-prod
 ```
+
+`deploy-prod` runs `git pull --ff-only`, rebuilds and starts containers in the background, then prunes unused images.
+
+## Makefile Operations
+
+Day-to-day Docker Compose commands are wrapped in the root [`Makefile`](Makefile) so local and production use the same target names.
+
+| Target | Purpose |
+|--------|---------|
+| `deploy-prod` | Pull latest code → build & up → prune images |
+| `deploy-dev` | Build & up for local development |
+| `logs-prod` / `logs-dev` | Follow container logs |
+| `down-prod` / `down-dev` | Stop containers |
+| `restart-prod` / `restart-dev` | Recreate containers (see note below) |
+| `ps-prod` / `ps-dev` | Show running services |
+
+Design choices worth noting:
+
+- **Separate `prod` / `dev` variables and targets** — compose files and env files stay explicit; the target name tells you which environment you are touching.
+- **Composite `deploy-prod`** — one SSH command covers the common deploy loop on a server.
+- **`restart-*` uses `up -d --force-recreate`, not `docker compose restart`** — plain `restart` ignores Compose healthchecks, so the backend can boot before MySQL is ready. Recreate keeps `depends_on` / healthcheck ordering.
 
 ## Design Process
 
@@ -98,6 +129,7 @@ User features:
 
 Development and operations:
 
+- Extend Makefile ops (`help`, backups, per-service logs)
 - Add external storage integration, such as S3
 - Add an admin page
 - Add CI/CD
