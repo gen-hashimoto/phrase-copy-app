@@ -1,0 +1,36 @@
+# Workflow display name (shown in the Actions tab)
+name: CI
+
+# When to run
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# Jobs
+jobs:
+  build:
+    name: Build Docker images
+    runs-on: ubuntu-latest
+
+    steps:
+      # Check out the repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Build backend production image (no push)
+      - name: Build backend (prod)
+        run: |
+          docker build \
+            --target prod \
+            -t phrase-copy-backend:ci \
+            ./backend
+
+      # Build frontend production image (no push)
+      - name: Build frontend (prod)
+        run: |
+          docker build \
+            --target prod \
+            -t phrase-copy-frontend:ci \
+            ./frontend

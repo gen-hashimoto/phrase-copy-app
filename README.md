@@ -72,14 +72,14 @@ make deploy-prod
 
 Day-to-day Docker Compose commands are wrapped in the root [`Makefile`](Makefile) so local and production use the same target names.
 
-| Target | Purpose |
-|--------|---------|
-| `deploy-prod` | Pull latest code → build & up → prune images |
-| `deploy-dev` | Build & up for local development |
-| `logs-prod` / `logs-dev` | Follow container logs |
-| `down-prod` / `down-dev` | Stop containers |
-| `restart-prod` / `restart-dev` | Recreate containers (see note below) |
-| `ps-prod` / `ps-dev` | Show running services |
+| Target                         | Purpose                                      |
+| ------------------------------ | -------------------------------------------- |
+| `deploy-prod`                  | Pull latest code → build & up → prune images |
+| `deploy-dev`                   | Build & up for local development             |
+| `logs-prod` / `logs-dev`       | Follow container logs                        |
+| `down-prod` / `down-dev`       | Stop containers                              |
+| `restart-prod` / `restart-dev` | Recreate containers (see note below)         |
+| `ps-prod` / `ps-dev`           | Show running services                        |
 
 Design choices worth noting:
 
