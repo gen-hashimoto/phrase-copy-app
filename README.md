@@ -16,7 +16,7 @@ This app is a lightweight tool for managing and copying your frequently used phr
 - Frontend: Next.js, React, TypeScript, Tailwind CSS, shadcn/ui
 - Backend: FastAPI, MySQL
 - Auth: Magic Link, HttpOnly cookie
-- Ops: Docker Compose, Makefile (`prod` / `dev` targets)
+- Ops: Docker Compose, Makefile (`prod` / `dev` targets), GitHub Actions (CI)
 
 ## Environment Variables
 
@@ -68,7 +68,14 @@ make deploy-prod
 
 `deploy-prod` runs `git pull --ff-only`, rebuilds and starts containers in the background, then prunes unused images.
 
-## Makefile Operations
+## Operations
+
+This project uses two tools for day-to-day work:
+
+- **Makefile** — run and manage the app (local dev and production server)
+- **GitHub Actions** — check code quality and Docker builds on push / PR
+
+### Makefile
 
 Day-to-day Docker Compose commands are wrapped in the root [`Makefile`](Makefile) so local and production use the same target names.
 
@@ -86,6 +93,15 @@ Design choices worth noting:
 - **Separate `prod` / `dev` variables and targets** — compose files and env files stay explicit; the target name tells you which environment you are touching.
 - **Composite `deploy-prod`** — one SSH command covers the common deploy loop on a server.
 - **`restart-*` uses `up -d --force-recreate`, not `docker compose restart`** — plain `restart` ignores Compose healthchecks, so the backend can boot before MySQL is ready. Recreate keeps `depends_on` / healthcheck ordering.
+
+### GitHub Actions (CI)
+
+On push or pull request to `main`, [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs automatically:
+
+1. **Quality** — frontend lint and typecheck
+2. **Build** — Docker images for frontend and backend (`prod` target)
+
+This checks that the code is healthy before merge. It does not deploy to EC2 yet.
 
 ## Design Process
 
@@ -132,4 +148,4 @@ Development and operations:
 - Extend Makefile ops (`help`, backups, per-service logs)
 - Add external storage integration, such as S3
 - Add an admin page
-- Add CI/CD
+- Extend CI/CD with ECR / EC2 deploy
