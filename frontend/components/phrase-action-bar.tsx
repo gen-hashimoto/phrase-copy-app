@@ -7,7 +7,6 @@ import { AddPhraseControl } from "@/components/add-phrase-control"
 type Props = {
   phraseCount: number
   limit?: number
-  mode: "guest" | "user"
   canCopyAll: boolean
   isCopyAllCopied: boolean
   canAdd: boolean
@@ -18,11 +17,9 @@ type Props = {
 function formatPhraseCount({
   phraseCount,
   limit,
-  mode,
 }: {
   phraseCount: number
   limit?: number
-  mode: "guest" | "user"
 }) {
   if (limit != null) {
     return `${phraseCount} / ${limit} used`
@@ -34,7 +31,6 @@ function formatPhraseCount({
 export function PhraseActionBar({
   phraseCount,
   limit,
-  mode,
   canCopyAll,
   isCopyAllCopied,
   canAdd,
@@ -47,7 +43,7 @@ export function PhraseActionBar({
         <AddPhraseControl disabled={!canAdd} onAdd={onAdd} />
 
         <p className="mr-auto text-sm text-muted-foreground">
-          {formatPhraseCount({ phraseCount, limit, mode })}
+          {formatPhraseCount({ phraseCount, limit })}
         </p>
 
         <Button

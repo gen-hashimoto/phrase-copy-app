@@ -298,7 +298,6 @@ export function PhraseManager({
       <PhraseActionBar
         phraseCount={phrases.length}
         limit={limit}
-        mode={mode}
         canCopyAll={canCopyAll}
         isCopyAllCopied={isCopied("all")}
         canAdd={canAdd}
