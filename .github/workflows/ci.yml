@@ -1,0 +1,91 @@
+name: CI
+
+# When to run + path filters
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - ".github/workflows/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - ".github/workflows/**"
+
+jobs:
+  # --------------------------------------------------
+  # Job 1: Quality checks (lint / typecheck)
+  # --------------------------------------------------
+  # Run light checks first, before the heavier Docker build.
+  quality:
+    name: Lint & typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Typecheck frontend
+        working-directory: frontend
+        run: npm run typecheck
+
+      # --- How to use Secrets ---
+      # - name: Example secret usage
+      #   env:
+      #     SOME_TOKEN: ${{ secrets.SOME_TOKEN }}
+      #     APP_ENV: ${{ vars.APP_ENV }}
+      #   run: echo "token length is ${#SOME_TOKEN}"
+
+  # --------------------------------------------------
+  # Job 2: Docker build (after quality / with cache)
+  # --------------------------------------------------
+  build:
+    name: Build Docker images
+    needs: quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Buildx is required for cache-from /cache-to (type=gha)
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build backend (prod)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          target: prod
+          push: false
+          tags: phrase-copy-backend:ci
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Build frontend (prod)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          target: prod
+          push: false
+          tags: phrase-copy-frontend:ci
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
