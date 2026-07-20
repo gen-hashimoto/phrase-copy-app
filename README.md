@@ -95,16 +95,16 @@ Day-to-day tools:
 
 #### Makefile
 
-| Target                         | Purpose                                              |
-| ------------------------------ | ---------------------------------------------------- |
-| `deploy-prod-ecr`              | ECR login → pull app images → up → prune             |
-| `login-ecr` / `pull-prod`      | ECR auth / pull only                                 |
-| `deploy-prod`                  | `git pull` → build & up on server (legacy fallback)  |
-| `deploy-dev`                   | Build & up for local development                     |
-| `logs-prod` / `logs-dev`       | Follow container logs                                |
-| `down-prod` / `down-dev`       | Stop containers                                      |
-| `restart-prod` / `restart-dev` | Recreate containers (see note below)                 |
-| `ps-prod` / `ps-dev`           | Show running services                                |
+| Target                         | Purpose                                             |
+| ------------------------------ | --------------------------------------------------- |
+| `deploy-prod-ecr`              | ECR login → pull app images → up → prune            |
+| `login-ecr` / `pull-prod`      | ECR auth / pull only                                |
+| `deploy-prod`                  | `git pull` → build & up on server (legacy fallback) |
+| `deploy-dev`                   | Build & up for local development                    |
+| `logs-prod` / `logs-dev`       | Follow container logs                               |
+| `down-prod` / `down-dev`       | Stop containers                                     |
+| `restart-prod` / `restart-dev` | Recreate containers (see note below)                |
+| `ps-prod` / `ps-dev`           | Show running services                               |
 
 Design choices worth noting:
 
@@ -114,12 +114,10 @@ Design choices worth noting:
 
 #### GitHub Actions
 
-| Workflow | File | When | What it does |
-| -------- | ---- | ---- | ------------ |
-| **CI** | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | PR / push to `main` | Lint, typecheck, Docker build check (`push: false`) |
+| Workflow        | File                                                           | When                                    | What it does                                                 |
+| --------------- | -------------------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------ |
+| **CI**          | [`.github/workflows/ci.yml`](.github/workflows/ci.yml)         | PR / push to `main`                     | Lint, typecheck, Docker build check (`push: false`)          |
 | **Deploy (CD)** | [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) | Push to `main` (or `workflow_dispatch`) | Quality → build & push to ECR → SSH to EC2 → `ec2-deploy.sh` |
-
-Learning notes and IAM / ECR setup steps live under [`sandbox/ecr-ec2/`](sandbox/ecr-ec2/).
 
 ## Design Process
 
