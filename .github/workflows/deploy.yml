@@ -1,0 +1,125 @@
+name: Deploy
+
+# When to run + path filters
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "backend/**"
+      - "infra/**"
+      - ".github/workflows/**"
+  # Optional: manual deploy without a code change
+  workflow_dispatch:
+
+env:
+  AWS_REGION: ${{ vars.AWS_REGION || 'ap-northeast-1' }}
+  ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+
+jobs:
+  # --------------------------------------------------
+  # Job 1: Quality checks (lint / typecheck)
+  # --------------------------------------------------
+  # Run light checks first, before the heavier Docker build.
+  quality:
+    name: Lint & typecheck
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: npm run lint
+
+      - name: Typecheck frontend
+        working-directory: frontend
+        run: npm run typecheck
+
+  # --------------------------------------------------
+  # Job 2: Build & push to ECR
+  # --------------------------------------------------
+  build-and-push:
+    name: Build & push images
+    needs: quality
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build & push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          target: prod
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/phrases/backend:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/phrases/backend:latest
+          cache-from: type=gha,scope=backend
+          cache-to: type=gha,mode=max,scope=backend
+
+      - name: Build & push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          target: prod
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/phrases/frontend:${{ github.sha }}
+            ${{ env.ECR_REGISTRY }}/phrases/frontend:latest
+          cache-from: type=gha,scope=frontend
+          cache-to: type=gha,mode=max,scope=frontend
+
+  # --------------------------------------------------
+  # Job 3: Deploy on EC2 (pull & up - no build on server)
+  # --------------------------------------------------
+  deploy:
+    name: Deploy to EC2
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd ~/phrase-copy-app
+            export IMAGE_TAG=${{ github.sha }}
+            export ECR_REGISTRY=${{ env.ECR_REGISTRY }}
+            export AWS_REGION=${{ env.AWS_REGION }}
+            bash scripts/ec2-deploy.sh
