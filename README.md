@@ -148,4 +148,4 @@ Development and operations:
 - Extend Makefile ops (`help`, backups, per-service logs)
 - Add external storage integration, such as S3
 - Add an admin page
-- Extend CI/CD with ECR / EC2 deploy
+- CD with ECR / EC2 — see [`sandbox/ecr-ec2/`](sandbox/ecr-ec2/) (learning path; production workflow is written by you)

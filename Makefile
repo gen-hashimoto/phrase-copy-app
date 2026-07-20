@@ -1,3 +1,4 @@
+# ==================================================
 # variables
 COMPOSE_PROD := infra/docker-compose.prod.yml
 ENV_PROD := infra/.env.prod
@@ -10,6 +11,33 @@ DC_DEV := docker compose -f $(COMPOSE_DEV) --env-file $(ENV_DEV)
 .PHONY: deploy-prod deploy-dev \
 				logs-prod logs-dev down-prod down-dev \
 				restart-prod restart-dev ps-prod ps-dev
+	
+# ==================================================
+# Production: pull from ECR
+# ==================================================
+# variables
+COMPOSE_PROD_ECR := infra/docker-compose.prod.ecr.yml
+DC_PROD_ECR := docker compose -f $(COMPOSE_PROD_ECR) --env-file $(ENV_PROD)
+
+.PHONY: login-ecr pull-prod deploy-prod-ecr
+
+# Log in to ECR using the EC2 instance profile (no access keys in .env)
+# Requires AWS_REGION and ECR_REGISTRY in the environment (or pass on the command line).
+login-ecr:
+	aws ecr get-login-password --region $(AWS_REGION) \
+		| docker login --username AWS --password-stdin $(ECR_REGISTRY)
+
+# Pull app images only (caddy/db use public images)
+pull-prod: login-ecr
+	$(DC_PROD_ECR) pull frontend backend
+
+# Manual deploy on EC2: set IMAGE_TAG first, e.g. export IMAGE_TAG=abc1234
+deploy-prod-ecr: pull-prod
+	$(DC_PROD_ECR) up -d
+	docker image prune -f
+
+# Example one-liner after SSH (rollback):
+#   IMAGE_TAG=previous-sha make deploy-prod-ecr
 
 # ==================================================
 # Production
