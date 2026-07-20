@@ -16,7 +16,7 @@ This app is a lightweight tool for managing and copying your frequently used phr
 - Frontend: Next.js, React, TypeScript, Tailwind CSS, shadcn/ui
 - Backend: FastAPI, MySQL
 - Auth: Magic Link, HttpOnly cookie
-- Ops: Docker Compose, Makefile (`prod` / `dev` targets), GitHub Actions (CI)
+- Ops: Docker Compose, Makefile (`prod` / `dev` / ECR targets), Amazon ECR, GitHub Actions (CI + CD)
 
 ## Environment Variables
 
@@ -56,52 +56,70 @@ make down-dev
 
 With `EMAIL_BACKEND=smtp` in `infra/.env.local`, magic link emails are delivered to [Mailpit](https://github.com/axllent/mailpit) instead of AWS SES. Request a link at `/login`, then open `http://localhost:8025` to read the message and click the login link. Set `APP_ORIGIN=http://localhost:3000` so links in the email point to your local frontend. To skip email and show a dev link on the login page instead, use `EMAIL_BACKEND=dev`.
 
-## Production Start
+## Production / CI / CD
+
+Production runs on **EC2** with **Docker Compose**. App images (`frontend` / `backend`) are built in GitHub Actions, stored in **Amazon ECR** (`phrases/frontend`, `phrases/backend`), and pulled on the server. Caddy and MySQL stay as public images on the host.
+
+```text
+Push / merge to main
+  → GitHub Actions (quality → build & push to ECR → SSH deploy)
+  → EC2: docker compose pull & up (no image build on the server)
+```
+
+### Production start (server)
 
 ```bash
-# Run from the project root
+# On EC2, from the project root
 cp infra/.env.prod.example infra/.env.prod
-# Edit .env.prod before starting.
+# Edit .env.prod (include ECR_REGISTRY, IMAGE_TAG, secrets, etc.)
 
+# Preferred: pull images from ECR (after Actions has pushed them)
+export AWS_REGION=ap-northeast-1
+export ECR_REGISTRY=<account>.dkr.ecr.ap-northeast-1.amazonaws.com
+export IMAGE_TAG=latest   # or a commit sha
+make deploy-prod-ecr
+
+# Fallback (build on the server — older path, still available)
 make deploy-prod
 ```
 
-`deploy-prod` runs `git pull --ff-only`, rebuilds and starts containers in the background, then prunes unused images.
+Compose for ECR: [`infra/docker-compose.prod.ecr.yml`](infra/docker-compose.prod.ecr.yml).  
+Deploy helper: [`scripts/ec2-deploy.sh`](scripts/ec2-deploy.sh) (used by Actions SSH and for manual runs).
 
-## Operations
+### Operations
 
-This project uses two tools for day-to-day work:
+Day-to-day tools:
 
-- **Makefile** — run and manage the app (local dev and production server)
-- **GitHub Actions** — check code quality and Docker builds on push / PR
+- **Makefile** — local / production Compose commands, including ECR pull deploy
+- **GitHub Actions** — CI on PRs; CD (ECR + EC2) on `main`
 
-### Makefile
+#### Makefile
 
-Day-to-day Docker Compose commands are wrapped in the root [`Makefile`](Makefile) so local and production use the same target names.
-
-| Target                         | Purpose                                      |
-| ------------------------------ | -------------------------------------------- |
-| `deploy-prod`                  | Pull latest code → build & up → prune images |
-| `deploy-dev`                   | Build & up for local development             |
-| `logs-prod` / `logs-dev`       | Follow container logs                        |
-| `down-prod` / `down-dev`       | Stop containers                              |
-| `restart-prod` / `restart-dev` | Recreate containers (see note below)         |
-| `ps-prod` / `ps-dev`           | Show running services                        |
+| Target                         | Purpose                                              |
+| ------------------------------ | ---------------------------------------------------- |
+| `deploy-prod-ecr`              | ECR login → pull app images → up → prune             |
+| `login-ecr` / `pull-prod`      | ECR auth / pull only                                 |
+| `deploy-prod`                  | `git pull` → build & up on server (legacy fallback)  |
+| `deploy-dev`                   | Build & up for local development                     |
+| `logs-prod` / `logs-dev`       | Follow container logs                                |
+| `down-prod` / `down-dev`       | Stop containers                                      |
+| `restart-prod` / `restart-dev` | Recreate containers (see note below)                 |
+| `ps-prod` / `ps-dev`           | Show running services                                |
 
 Design choices worth noting:
 
-- **Separate `prod` / `dev` variables and targets** — compose files and env files stay explicit; the target name tells you which environment you are touching.
-- **Composite `deploy-prod`** — one SSH command covers the common deploy loop on a server.
-- **`restart-*` uses `up -d --force-recreate`, not `docker compose restart`** — plain `restart` ignores Compose healthchecks, so the backend can boot before MySQL is ready. Recreate keeps `depends_on` / healthcheck ordering.
+- **Separate `prod` / `dev` / ECR variables and targets** — compose files and env files stay explicit.
+- **Build in CI, run on EC2** — the server pulls tagged images instead of compiling on every deploy.
+- **`restart-*` uses `up -d --force-recreate`, not `docker compose restart`** — plain `restart` ignores Compose healthchecks; recreate keeps `depends_on` / healthcheck ordering.
 
-### GitHub Actions (CI)
+#### GitHub Actions
 
-On push or pull request to `main`, [`.github/workflows/ci.yml`](.github/workflows/ci.yml) runs automatically:
+| Workflow | File | When | What it does |
+| -------- | ---- | ---- | ------------ |
+| **CI** | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) | PR / push to `main` | Lint, typecheck, Docker build check (`push: false`) |
+| **Deploy (CD)** | [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) | Push to `main` (or `workflow_dispatch`) | Quality → build & push to ECR → SSH to EC2 → `ec2-deploy.sh` |
 
-1. **Quality** — frontend lint and typecheck
-2. **Build** — Docker images for frontend and backend (`prod` target)
-
-This checks that the code is healthy before merge. It does not deploy to EC2 yet.
+Learning notes and IAM / ECR setup steps live under [`sandbox/ecr-ec2/`](sandbox/ecr-ec2/).
 
 ## Design Process
 
@@ -148,4 +166,5 @@ Development and operations:
 - Extend Makefile ops (`help`, backups, per-service logs)
 - Add external storage integration, such as S3
 - Add an admin page
-- CD with ECR / EC2 — see [`sandbox/ecr-ec2/`](sandbox/ecr-ec2/) (learning path; production workflow is written by you)
+- Replace long-lived AWS access keys with GitHub Actions OIDC
+- Harden SSH access (e.g. SSM Session Manager instead of opening port 22)

@@ -13,7 +13,7 @@ export function AppHeader({ user, showLoginButton }: Props) {
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3">
         <div>
           <Link href="/" className="text-lg font-medium">
-            Phrases-from-ECR-makefile
+            Phrases
           </Link>
           {user ? (
             <p className="text-sm text-muted-foreground">{user.email}</p>
