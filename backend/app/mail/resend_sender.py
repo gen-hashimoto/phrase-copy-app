@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import os
 import urllib.error
 import urllib.request
 
 from app.mail.base import MailSender
+from app.mail.content import build_magic_link_content
 
 RESEND_API_URL = "https://api.resend.com/emails"
 
@@ -17,10 +17,8 @@ class ResendMailSender(MailSender):
         *,
         from_email: str | None = None,
     ) -> None:
-        self._api_key = api_key or os.environ["RESEND_API_KEY"]
-        self._from_email = from_email or os.getenv(
-            "RESEND_FROM_EMAIL", "onboarding@resend.dev"
-        )
+        self._api_key = api_key
+        self._from_email = from_email
 
     def send_magic_link(
         self,
@@ -29,7 +27,7 @@ class ResendMailSender(MailSender):
         login_url: str,
         is_new_user: bool,
     ) -> None:
-        subject, text_body, html_body = self._build_content(
+        subject, text_body, html_body = build_magic_link_content(
             login_url=login_url, is_new_user=is_new_user
         )
         payload = {
@@ -59,48 +57,3 @@ class ResendMailSender(MailSender):
             raise RuntimeError(
                 f"Resend API failed with status {exc.code}:{detail}"
             ) from exc
-
-    @staticmethod
-    def _build_content(
-        *,
-        login_url: str,
-        is_new_user: bool,
-    ) -> tuple[str, str, str]:
-        if is_new_user:
-            subject = "Phrases へようこそ - ログインリンクをお送りします"
-            text_body = (
-                "Phrases をご利用いただきありがとうございます。\n"
-                "アカウントの作成が完了しました。\n\n"
-                "以下のリンクからログインを完了してください。\n"
-                "※ このリンクは 15 分間有効です。期限を過ぎた場合は、"
-                "再度ログイン画面からメールを送信してください。\n\n"
-                f"{login_url}\n"
-                "※ 心当たりがない場合は、このメールを破棄してください。"
-            )
-            html_body = (
-                "<p>Phrases をご利用いただきありがとうございます。</p>"
-                "<p>アカウントの作成が完了しました。</p>"
-                f'<p><a href="{login_url}">ログインを完了する</a></p>'
-                "<p><small>※ このリンクは 15 分間有効です。期限を過ぎた場合は、"
-                "再度ログイン画面からメールを送信してください。</small></p>"
-                "<p><small>※ 心当たりがない場合は、このメールを破棄してください。</small></p>"
-            )
-        else:
-            subject = "Phrases ログインリンクのご案内"
-            text_body = (
-                "Phrases へのログインをリクエストいただきありがとうございます。\n\n"
-                "以下のリンクからログインしてください。\n"
-                "※ このリンクは 15 分間有効です。期限を過ぎた場合は、"
-                "再度ログイン画面からメールを送信してください。\n\n"
-                f"{login_url}\n"
-                "※ 心当たりがない場合は、このメールを破棄してください。"
-            )
-            html_body = (
-                "<p>Phrases へのログインをリクエストいただきありがとうございます。</p>"
-                f'<p><a href="{login_url}">ログインする</a></p>'
-                "<p><small>※ このリンクは 15 分間有効です。期限を過ぎた場合は、"
-                "再度ログイン画面からメールを送信してください。</small></p>"
-                "<p><small>※ 心当たりがない場合は、このメールを破棄してください。</small></p>"
-            )
-
-        return subject, text_body, html_body

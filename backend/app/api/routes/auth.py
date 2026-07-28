@@ -19,8 +19,9 @@ from app.core.jwt_cookie import (
 )
 from app.models.user import User
 from app.settings import settings
-from app.services.email_service import send_magic_link_email
 from app.core.rate_limit import check_rate_limit, client_ip
+from app.mail.factory import create_mail_sender
+from backend.app.mail.base import MailSender
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -117,13 +118,20 @@ def request_magic_link(
     verify_url = f"{settings.app_origin}/auth/verify?token={token}"
 
     # For dev_link.
-    if settings.email_backend == "dev":
+    # dev_link: skip email; return the link in the response (not via MailSender) .
+    if settings.mail_provider == "dev_link":
         return MagicLinkResponse(
             ok=True, message=success_message, dev_link=f"/auth/verify?token={token}"
         )
 
     # For email. smpt(Mailpit) for development, ses for production.
-    send_magic_link_email(email, verify_url, is_new_user=is_new_user)
+    sender = create_mail_sender()
+    sender.send_magic_link(
+        to_email=email,
+        login_url=verify_url,
+        is_new_user=is_new_user,
+    )
+
     return MagicLinkResponse(ok=True, message=success_message, dev_link=None)
 
 

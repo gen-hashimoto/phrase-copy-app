@@ -14,22 +14,24 @@ class Settings:
     jwt_secret: str
     cookie_secure: bool
     aws_region: str
-    ses_from_email: str
+    from_email: str
     app_origin: str
     is_development: bool
-    email_backend: str  # "ses" / "smtp" / "dev"
+    mail_provider: str  # "dev_smtp" / "dev_link" / "ses" / "resend"
     smtp_host: str
     smtp_port: int
+    resend_api_key: str
 
 
 settings = Settings(
     jwt_secret=os.environ["JWT_SECRET"],
     cookie_secure=env_bool("AUTH_COOKIE_SECURE", False),
     aws_region=os.environ["AWS_REGION"],
-    ses_from_email=os.environ["SES_FROM_EMAIL"],
+    from_email=os.environ["FROM_EMAIL"],
     app_origin=os.environ["APP_ORIGIN"],
     is_development=env_bool("IS_DEVELOPMENT", False),
-    email_backend=os.environ["EMAIL_BACKEND"],
+    mail_provider=os.environ["MAIL_PROVIDER"],
     smtp_host=os.getenv("SMTP_HOST", "mailpit"),
     smtp_port=int(os.getenv("SMTP_PORT", "1025")),
+    resend_api_key=os.getenv("RESEND_API_KEY", ""),
 )
