@@ -54,7 +54,7 @@ make down-dev
 
 ### Local Magic Link Email (Mailpit)
 
-With `EMAIL_BACKEND=smtp` in `infra/.env.local`, magic link emails are delivered to [Mailpit](https://github.com/axllent/mailpit) instead of AWS SES. Request a link at `/login`, then open `http://localhost:8025` to read the message and click the login link. Set `APP_ORIGIN=http://localhost:3000` so links in the email point to your local frontend. To skip email and show a dev link on the login page instead, use `EMAIL_BACKEND=dev`.
+With `MAIL_PROVIDER=dev_smtp` in `infra/.env.local`, magic link emails are delivered to [Mailpit](https://github.com/axllent/mailpit) instead of AWS SES. Request a link at `/login`, then open `http://localhost:8025` to read the message and click the login link. Set `APP_ORIGIN=http://localhost:3000` so links in the email point to your local frontend. To skip email and show a dev link on the login page instead, use `MAIL_PROVIDER=dev_link`.
 
 ## Production / CI / CD
 
