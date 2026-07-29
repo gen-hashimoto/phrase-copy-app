@@ -31,10 +31,10 @@ login-ecr:
 pull-prod: login-ecr
 	$(DC_PROD_ECR) pull frontend backend
 
-# Manual deploy on EC2: set IMAGE_TAG first, e.g. export IMAGE_TAG=abc1234
-deploy-prod-ecr: pull-prod
-	$(DC_PROD_ECR) up -d
-	docker image prune -f
+# Manual / same path as CI (scripts/ec2-deploy.sh)
+deploy-prod-ecr:
+	set -a && . ./$(ENV_PROD) && set +a && \
+	IMAGE_TAG=$${IMAGE_TAG:-latest} bash scripts/ec2-deploy.sh
 
 # Example one-liner after SSH (rollback):
 #   IMAGE_TAG=previous-sha make deploy-prod-ecr
