@@ -17,6 +17,11 @@ This app is a lightweight tool for managing and copying your frequently used phr
 - Backend: FastAPI, MySQL
 - Auth: Magic Link, HttpOnly cookie
 - Ops: Docker Compose, Makefile (`prod` / `dev` / ECR targets), Amazon ECR, GitHub Actions (CI + CD)
+- Email authentication via Resend
+
+## Latest Release
+
+Current version: **v1.0.0**
 
 ## Environment Variables
 
